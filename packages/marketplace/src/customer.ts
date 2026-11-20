@@ -111,7 +111,7 @@ export async function submitSupportRequest(db: Db, actor: Actor, i: SupportInput
 // ---------------------------------------------------------------- the customer's own requests
 
 export type MyEnquiry = { id: string; listingKind: ListingKind; listingTitle: string; listingRef: { kind: ListingKind; projectId: string | null; unitId: string | null; rentalId: string | null }; preferredContact: ContactMethod; message: string | null; status: EnquiryStatus; createdAt: Date };
-export type MyAppointment = { id: string; kind: AppointmentKind; listingTitle: string; slots: { date: string; period: DayPeriod }[]; preferredContact: ContactMethod; status: AppointmentStatus; confirmedFor: Date | null; orgNote: string | null; createdAt: Date };
+export type MyAppointment = { id: string; kind: AppointmentKind; listingTitle: string; slots: { date: string; period: DayPeriod }[]; preferredContact: ContactMethod; status: AppointmentStatus; confirmedFor: Date | null; timeZone: string | null; orgNote: string | null; createdAt: Date };
 export type MySupportRequest = { id: string; topic: SupportTopic; subject: string; message: string; status: SupportStatus; response: string | null; respondedAt: Date | null; createdAt: Date };
 
 /** Row-level security returns only rows whose customer is the signed-in user. */
@@ -125,7 +125,7 @@ export async function listMyRequests(db: Db, actor: Actor): Promise<{ enquiries:
     }));
     const appointments = (await c.query("select * from app.appointment_requests where customer_user_id = app.current_user_id() order by created_at desc limit 200")).rows.map((r) => ({
       id: r.id, kind: r.kind, listingTitle: r.listing_title, slots: r.preferred_slots, preferredContact: r.preferred_contact,
-      status: r.status, confirmedFor: r.confirmed_for, orgNote: r.org_note, createdAt: r.created_at,
+      status: r.status, confirmedFor: r.confirmed_for, timeZone: r.confirmed_time_zone, orgNote: r.org_note, createdAt: r.created_at,
     }));
     const support = (await c.query("select * from app.support_requests where customer_user_id = app.current_user_id() order by created_at desc limit 200")).rows.map((r) => ({
       id: r.id, topic: r.topic, subject: r.subject, message: r.message, status: r.status, response: r.response, respondedAt: r.responded_at, createdAt: r.created_at,

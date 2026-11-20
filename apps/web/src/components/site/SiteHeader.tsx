@@ -10,6 +10,7 @@ export function SiteHeader({ dict, locale }: Props) {
   const t = dict.site.nav;
   const home = `/${locale}`;
   const links = [
+    { href: `${home}/homes`, label: dict.cx.navHomes },
     { href: `${home}/product`, label: t.product },
     { href: `${home}/solutions`, label: t.solutions },
     { href: `${home}/pricing`, label: t.pricing },

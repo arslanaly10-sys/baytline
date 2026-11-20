@@ -25,6 +25,9 @@ importers:
       '@baytline/management':
         specifier: workspace:*
         version: link:../../packages/management
+      '@baytline/marketplace':
+        specifier: workspace:*
+        version: link:../../packages/marketplace
       '@baytline/platform':
         specifier: workspace:*
         version: link:../../packages/platform

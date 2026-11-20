@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { getPmUnit } from "@baytline/management";
+import { getRentalListingAdmin } from "@baytline/marketplace";
+import { RentalPanel } from "@/components/cx/RentalPanel";
 import { format } from "@/i18n/format";
 import { orNotFound, pmSection } from "@/server/pm-page";
 import { getDb } from "@/server/db";
@@ -18,7 +20,7 @@ export default async function UnitPage({ params }: { params: Promise<{ locale: s
   if (!allowed) return <SectionShell page={page} section={section} allowed={false} />;
   const { dict } = page;
   const t = dict.pm.units;
-  const u = await orNotFound(getPmUnit(getDb(), actor, unitId));
+  const [u, rental] = await Promise.all([orNotFound(getPmUnit(getDb(), actor, unitId)), getRentalListingAdmin(getDb(), actor, unitId)]);
   const when = new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" });
 
   const List = ({ title, items }: { title: string; items: { key: string; href: string; label: string; chips: React.ReactNode }[] | null }) =>
@@ -69,6 +71,8 @@ export default async function UnitPage({ params }: { params: Promise<{ locale: s
           </ActionForm>
         </Panel>
       )}
+
+      <RentalPanel l={rental} dict={dict} locale={page.locale} orgId={orgId} />
 
       <div className="grid gap-8 lg:grid-cols-3">
         <List title={t.leases} items={u.leases && u.leases.map((l) => ({ key: l.id, href: `${base}/leasing/${l.id}`, label: `${l.tenantName} · ${day(l.startDate, locale)} – ${day(l.endDate, locale)}`, chips: <Chip tone={leaseTone(l.status as never)}>{dict.pm.leaseStatuses[l.status as keyof typeof dict.pm.leaseStatuses]}</Chip> }))} />

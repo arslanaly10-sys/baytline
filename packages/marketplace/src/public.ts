@@ -74,6 +74,8 @@ export type PublicUnit = {
   /** Expected handover: the building's or phase's date if set, else the project's. Always an estimate unless the project is completed. */
   handover: { date: string; basis: "phase" | "project" } | null;
   verified: boolean;
+  /** Where the unit's details come from (see provenance.ts). */
+  sourceKind: SourceKind;
   availability: Availability;
   lastUpdatedAt: Date;
 };
@@ -185,6 +187,7 @@ const mapUnit = (r: Record<string, any>, now: Date): PublicUnit => ({
   price: r.price_minor ? { minor: String(r.price_minor), currency: r.price_currency, effectiveFrom: r.price_effective_from } : null,
   handover: r.phase_expected_handover ? { date: r.phase_expected_handover, basis: "phase" } : r.project_handover_date ? { date: r.project_handover_date, basis: "project" } : null,
   verified: r.verification === "verified",
+  sourceKind: r.source_kind,
   availability: unitAvailability({ status: r.status, sourceKind: r.source_kind, verification: r.verification, lastVerifiedAt: r.last_verified_at, lastUpdatedAt: r.last_updated_at }, now),
   lastUpdatedAt: r.last_updated_at,
 });
@@ -444,4 +447,17 @@ export async function compareListings(db: Db, refs: { kind: "unit" | "rental"; i
     }
     return items;
   });
+}
+
+// ---------------------------------------------------------------- market display settings
+
+export type PublicMarket = { code: MarketCode; name: { en: string; ar: string }; currency: string; timeZone: string; numberingSystem: "latn" | "arab"; dateStyle: "short" | "medium" | "long" };
+
+/** Enabled markets with their display settings, for formatting on public pages. */
+export async function listPublicMarkets(db: Db): Promise<PublicMarket[]> {
+  return publicTx(db, async (c) =>
+    (await c.query("select * from app.pub_markets order by code")).rows.map((r) => ({
+      code: r.code, name: { en: r.name_en, ar: r.name_ar }, currency: r.currency, timeZone: r.time_zone, numberingSystem: r.numbering_system, dateStyle: r.date_style,
+    })),
+  );
 }

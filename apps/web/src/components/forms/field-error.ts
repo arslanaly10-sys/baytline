@@ -16,6 +16,10 @@ const ALIASES: Record<string, string[]> = {
   handover_before_launch: ["handoverDate"],
   country: ["market"],
   role: ["orgType"],
+  slots: ["slot1Date"],
+  phone_required: ["phone"],
+  listing: ["about"],
+  confirmed_for: ["confirmedFor"],
   agreement_end: ["agreementEnd"],
 };
 

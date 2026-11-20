@@ -282,7 +282,7 @@ export async function confirmAppointment(db: Db, actor: Actor, appointmentId: st
     if (!a) throw new IdentityError("not_found");
     if (a.status !== "pending" && a.status !== "confirmed") throw new IdentityError("invalid_input", "appointment_closed");
     const r = await c.query(
-      `update app.appointment_requests a set status = 'confirmed', confirmed_for = ($2::timestamp at time zone mk.time_zone), org_note = $3,
+      `update app.appointment_requests a set status = 'confirmed', confirmed_for = ($2::timestamp at time zone mk.time_zone), confirmed_time_zone = mk.time_zone, org_note = $3,
               decided_at = now(), decided_by = $4
          from app.organizations o join app.markets mk on mk.code = o.market
         where a.id = $1 and o.id = a.routed_org_id and ($2::timestamp at time zone mk.time_zone) > now()`,

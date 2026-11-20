@@ -38,6 +38,7 @@ export function ProjectFrame({
     ...(can("price.view") ? [{ href: `${p}/pricing`, label: t.pricing }] : []),
     ...(can("document.view") ? [{ href: `${p}/documents`, label: t.documents }] : []),
     ...(can("partner.view") ? [{ href: `${p}/partners`, label: t.partners }] : []),
+    { href: `${p}/listing`, label: dict.cx.org.publish.tab },
   ];
   return (
     <div className="space-y-8">
