@@ -65,6 +65,7 @@ export default async function ProjectListingAdmin({ params }: { params: Promise<
               </fieldset>
               <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="showPrices" value="yes" defaultChecked={pub.showPrices} className="size-4" />{t.showPrices}</label>
               <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="showPaymentPlans" value="yes" defaultChecked={pub.showPaymentPlans} className="size-4" />{t.showPlans}</label>
+              <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="showLocation" value="yes" defaultChecked={pub.showLocation} className="size-4" />{dict.loc.showLocation}</label>
               <div className="max-w-md">
                 <SelectField label={t.route} name="routeBrokerageOrgId" defaultValue={pub.routeBrokerageOrgId ?? ""} options={[{ value: "", label: t.routeOwner }, ...pub.brokerages.map((b) => ({ value: b.id, label: b.name }))]} />
                 <p className="mt-1 text-xs text-ink-muted">{t.routeHint}</p>

@@ -61,6 +61,7 @@ export function SharesPanel({ dict, locale, orgId, shares, canManage, brokerages
                       <Chip tone="neutral">{t.baseAccess}</Chip>
                       {s.includePricing && <Chip tone="neutral">{t.includePricing}</Chip>}
                       {s.includeDocuments && <Chip tone="neutral">{t.includeDocuments}</Chip>}
+                      {s.includeLocation && <Chip tone="neutral">{dict.loc.includeLocation}</Chip>}
                     </p>
                     <p className="mt-1 text-xs text-ink-muted">{format(t.sharedSince, { date: date.format(s.grantedAt), name: s.grantedByName ?? "" })}</p>
                   </div>
@@ -71,6 +72,7 @@ export function SharesPanel({ dict, locale, orgId, shares, canManage, brokerages
                         <input type="hidden" name="shareId" value={s.id} />
                         <Check name="includePricing" label={t.includePricing} defaultChecked={s.includePricing} />
                         <Check name="includeDocuments" label={t.includeDocuments} defaultChecked={s.includeDocuments} />
+                        <Check name="includeLocation" label={dict.loc.includeLocation} defaultChecked={s.includeLocation} />
                       </ActionForm>
                       <ConfirmAction action={revokeShareAction} trigger={t.revoke} hint={t.revokeHint} confirmLabel={t.revoke} pendingLabel={dict.dev.projects.saving}>
                         {hidden}
@@ -102,6 +104,7 @@ export function SharesPanel({ dict, locale, orgId, shares, canManage, brokerages
               <div className="flex flex-col gap-2">
                 <Check name="includePricing" label={t.includePricing} />
                 <Check name="includeDocuments" label={t.includeDocuments} />
+                <Check name="includeLocation" label={dict.loc.includeLocation} />
               </div>
               <p className="text-xs text-ink-muted">{t.sampleNote}</p>
             </ActionForm>

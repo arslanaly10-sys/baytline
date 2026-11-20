@@ -35,3 +35,9 @@ export function ago(value: Date, locale: UiLocale, now = new Date()): string {
 
 /** Joins short items with the language's own comma ("، " in Arabic). */
 export const list = (items: (string | null | undefined)[], locale: UiLocale) => items.filter(Boolean).join(locale === "ar" ? "، " : ", ");
+
+/** "450 m" / "1.8 km" in the given Intl locale. */
+export function distanceText(meters: number, intlLocale: string): string {
+  if (meters < 1000) return new Intl.NumberFormat(intlLocale, { style: "unit", unit: "meter", maximumFractionDigits: 0 }).format(Math.round(meters / 10) * 10);
+  return new Intl.NumberFormat(intlLocale, { style: "unit", unit: "kilometer", maximumFractionDigits: 1 }).format(meters / 1000);
+}

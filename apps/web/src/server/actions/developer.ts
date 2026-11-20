@@ -245,6 +245,7 @@ export const grantShareAction = async (_p: FormState, fd: FormData) =>
       brokerageId: str(fd, "brokerageId"),
       includePricing: fd.get("includePricing") === "on",
       includeDocuments: fd.get("includeDocuments") === "on",
+      includeLocation: fd.get("includeLocation") === "on",
     });
     return c.dict.dev.partners.granted;
   });
@@ -254,6 +255,7 @@ export const updateShareAction = async (_p: FormState, fd: FormData) =>
     await updateShare(getDb(), c.actor, str(fd, "shareId"), {
       includePricing: fd.get("includePricing") === "on",
       includeDocuments: fd.get("includeDocuments") === "on",
+      includeLocation: fd.get("includeLocation") === "on",
     });
     return c.dict.dev.partners.updated;
   });

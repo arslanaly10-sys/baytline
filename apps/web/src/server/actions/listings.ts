@@ -30,6 +30,7 @@ export async function publishProjectAction(_p: FormState, fd: FormData): Promise
       unitIds: fd.getAll("unitIds").filter((x): x is string => typeof x === "string"),
       showPrices: str(fd, "showPrices") === "yes",
       showPaymentPlans: str(fd, "showPaymentPlans") === "yes",
+      showLocation: str(fd, "showLocation") === "yes",
       routeBrokerageOrgId: str(fd, "routeBrokerageOrgId"),
     });
     return (d) => d.cx.org.publish.published;

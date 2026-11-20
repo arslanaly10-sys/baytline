@@ -418,3 +418,19 @@ export async function importPlaces(db: Db, actor: Actor, projectId: string, csv:
     return { imported: valid.length, errors: [] };
   });
 }
+
+/** For a brokerage: projects shared with it, and whether each share includes location. */
+export type SharedProject = { id: string; name: string; city: string; market: MarketCode; includeLocation: boolean; grantedAt: Date };
+
+export async function listSharedProjects(db: Db, actor: Actor): Promise<SharedProject[]> {
+  return withAppTx(db, actor, async (c) => {
+    const ctx = await requireContext(c, actor);
+    if (ctx.org.type !== "brokerage") throw new IdentityError("not_found");
+    if (!hasCapability(ctx.principal, "project.view")) throw new IdentityError("forbidden", "project.view");
+    const { rows } = await c.query(
+      `select p.id, p.name, p.city, p.market, s.include_location, s.granted_at
+         from app.project_shares s join app.projects p on p.id = s.project_id
+        where s.brokerage_org_id = app.current_org_id() and s.status = 'active' order by p.name`);
+    return rows.map((r) => ({ id: r.id, name: r.name, city: r.city, market: r.market, includeLocation: r.include_location, grantedAt: r.granted_at }));
+  });
+}

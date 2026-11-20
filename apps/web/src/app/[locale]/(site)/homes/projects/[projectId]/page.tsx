@@ -2,7 +2,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Buildings, CalendarBlank, MapPin, SealCheck } from "@phosphor-icons/react/dist/ssr";
 import { IdentityError } from "@baytline/identity";
-import { getPublicProject, listPublicMarkets } from "@baytline/marketplace";
+import { getPublicLocation, getPublicProject, listPublicMarkets } from "@baytline/marketplace";
+import type { PlaceKind } from "@baytline/core";
+import { LocationPanel } from "@/components/location/LocationPanel";
 import { getDictionary } from "@/i18n";
 import { format } from "@/i18n/format";
 import { requireLocale } from "@/server/guards";
@@ -35,7 +37,7 @@ export default async function ProjectListingPage({ params, searchParams }: Param
   const locale = requireLocale(l);
   const dict = await getDictionary(locale);
   const t = dict.cx;
-  const [p, markets] = await Promise.all([load(projectId), listPublicMarkets(getDb())]);
+  const [p, markets, loc] = await Promise.all([load(projectId), listPublicMarkets(getDb()), getPublicLocation(getDb(), projectId)]);
   const nl = marketLocale(locale, markets, p.market);
   const back = `/${locale}/homes/projects/${p.id}`;
   const trig = t.project.triggers;
@@ -135,6 +137,18 @@ export default async function ProjectListingPage({ params, searchParams }: Param
                 ))}
               </ul>
             )}
+          </section>
+        )}
+
+        {loc && (
+          <section aria-labelledby="location-title" className="space-y-4">
+            <h2 id="location-title" className="font-display text-4xl">{dict.loc.publicTitle}</h2>
+            <p className="max-w-[70ch] text-mist">{dict.loc.publicIntro}</p>
+            <LocationPanel dict={dict} locale={locale} intlLocale={nl} projectName={p.name} city={p.city}
+              marketName={markets.find((m) => m.code === p.market)?.name[locale] ?? p.market}
+              location={loc.address || loc.area || loc.coordinates ? loc : null}
+              places={loc.places.map((x) => ({ ...x, kind: x.kind as PlaceKind }))} totalPlaces={loc.places.length}
+              hiddenWithoutDistance={0} mode="public" />
           </section>
         )}
 

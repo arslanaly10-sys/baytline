@@ -21,6 +21,16 @@ const ALIASES: Record<string, string[]> = {
   listing: ["about"],
   confirmed_for: ["confirmedFor"],
   agreement_end: ["agreementEnd"],
+  coordinates: ["latitude"],
+  coordinates_outside_gcc: ["latitude"],
+  distance: ["distanceKm"],
+  source_required: ["sourceReference"],
+  source_kind: ["sourceKind"],
+  expected_date: ["expectedDate"],
+  import_empty: ["csv"],
+  import_header: ["csv"],
+  import_too_many: ["csv"],
+  import_source_required: ["fileSource"],
 };
 
 const camel = (s: string) => s.replace(/_([a-z])/g, (_, c: string) => c.toUpperCase());

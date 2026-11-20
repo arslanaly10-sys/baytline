@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { UNIT_STATUSES } from "@baytline/core";
-import { listProjects, listUnits } from "@baytline/developer";
+import { listProjects, listSharedProjects, listUnits } from "@baytline/developer";
+import { PartnerInventory } from "@/components/location/PartnerInventory";
 import { actorOf, devSection } from "@/server/dev-page";
 import { getDb } from "@/server/db";
 import { buttonClass } from "@/lib/button";
@@ -11,11 +12,14 @@ import { UnitTable } from "@/components/dev/parts";
 
 type Search = { project?: string; status?: string; verification?: string; q?: string };
 
-/** All units across the developer's projects. Brokerages' "partner inventory" section is a later milestone. */
+/** All units across the developer's projects. Brokerages see the projects shared with them (units and prices come in a later milestone). */
 export default async function InventoryPage({ params, searchParams }: { params: Promise<{ locale: string; orgId: string }>; searchParams: Promise<Search> }) {
   const { locale, orgId } = await params;
   const q = await searchParams;
   const { page, allowed, section, isDeveloper } = await devSection(locale, orgId, "inventory");
+  if (allowed && page.ctx.org.type === "brokerage") {
+    return <PartnerInventory page={page} projects={await listSharedProjects(getDb(), actorOf(page))} />;
+  }
   if (!allowed || !isDeveloper) return <SectionShell page={page} section={section} allowed={allowed} />;
   const { dict } = page;
   const t = dict.dev.units;
