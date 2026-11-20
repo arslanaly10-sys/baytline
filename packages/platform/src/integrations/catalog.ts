@@ -1,4 +1,5 @@
 import type { Db } from "@baytline/db";
+import { providerFromEnv } from "@baytline/ai";
 
 /**
  * Providers the platform knows about. Credentials are NEVER stored here or in the
@@ -66,7 +67,20 @@ export const PROVIDERS: readonly ProviderDef[] = [
   { key: "whatsapp", kind: "messaging", milestone: 11, secrets: ["WHATSAPP_BUSINESS_TOKEN", "WHATSAPP_PHONE_NUMBER_ID"], adapterAvailable: false },
   { key: "sms", kind: "messaging", milestone: 11, secrets: ["SMS_PROVIDER_KEY"], adapterAvailable: false },
   { key: "document_storage", kind: "storage", milestone: 11, secrets: ["STORAGE_BUCKET", "STORAGE_ACCESS_KEY"], adapterAvailable: false },
-  { key: "ai_gateway", kind: "ai", milestone: 10, secrets: ["AI_PROVIDER_API_KEY"], adapterAvailable: false },
+  {
+    key: "ai_gateway",
+    kind: "ai",
+    milestone: 10,
+    secrets: ["AI_PROVIDER_API_KEY"],
+    adapterAvailable: true,
+    async check() {
+      const provider = providerFromEnv();
+      if (!provider) return { ok: false, latencyMs: 0, summary: "AI_PROVIDER_API_KEY is not set." };
+      let result = { ok: false, summary: "" };
+      const latencyMs = await timed(async () => { result = await provider.check(); });
+      return { ...result, latencyMs };
+    },
+  },
   // Per-source feeds (milestone 9): each source names its own FEED_* secrets. Turning this off stops every feed sync.
   { key: "developer_feeds", kind: "data_feed", milestone: 9, secrets: [], adapterAvailable: true },
   { key: "ad_channels", kind: "advertising", milestone: 14, secrets: [], adapterAvailable: false },

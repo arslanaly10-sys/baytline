@@ -99,6 +99,8 @@ export const PERMISSIONS = {
   "platform.markets.configure": { effect: "consequential" },
   "platform.sources.manage": { effect: "write" },
   "platform.ai_policy.manage": { effect: "consequential" },
+  // An organization's AI policy: on/off, models, budget, autonomy per capability; and its AI request log.
+  "ai_policy.manage": { effect: "consequential" },
   "support.handle": { effect: "write" },
 } as const satisfies Record<string, PermissionMeta>;
 
@@ -151,7 +153,7 @@ export const ROLE_GRANTS: Record<Role, readonly Grant[]> = {
 
   developer_admin: [
     ...developerRead,
-    ...g("org", "org.settings.manage", "org.members.view", "org.members.manage", "approval.view",
+    ...g("org", "org.settings.manage", "ai_policy.manage", "org.members.view", "org.members.manage", "approval.view",
       "project.manage", "unit.manage", "inventory.import", "inventory.verify", "document.manage", "area_profile.manage",
       "unit.hold.approve", "price.change.request", "price.change.approve", "payment_plan.manage", "payment_plan.publish", "payment_plan.approve",
       "partner.view", "partner.manage",
@@ -175,7 +177,7 @@ export const ROLE_GRANTS: Record<Role, readonly Grant[]> = {
   ],
 
   pm_admin: [
-    ...g("org", "org.settings.manage", "org.members.view", "org.members.manage", "approval.view",
+    ...g("org", "org.settings.manage", "ai_policy.manage", "org.members.view", "org.members.manage", "approval.view",
       "property.view", "property.manage", "occupancy.view", "lease.view", "lease.manage", "lease.sign.approve",
       "tenant.contact.view", "tenant_request.view", "tenant_request.manage", "maintenance.view", "maintenance.manage",
       "maintenance.spend.approve", "conversation.view", "analytics.view", "audit.view",
@@ -196,7 +198,7 @@ export const ROLE_GRANTS: Record<Role, readonly Grant[]> = {
   ],
 
   brokerage_admin: [
-    ...g("org", "org.settings.manage", "org.members.view", "org.members.manage", "approval.view",
+    ...g("org", "org.settings.manage", "ai_policy.manage", "org.members.view", "org.members.manage", "approval.view",
       "client_registration.submit", "lead.view", "lead.manage", "lead.assign", "viewing.manage",
       "deal.view", "deal.manage", "commission.view", "conversation.view", "conversation.reply",
       "campaign.view", "analytics.view", "audit.view"),
