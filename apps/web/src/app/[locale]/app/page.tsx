@@ -47,7 +47,7 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
           <StatePanel tone="warning" title={dict.welcome.notConfiguredTitle} body={dict.welcome.notConfiguredBody} />
         ) : !session ? (
           <section>
-            <h1 className="max-w-[24ch] text-2xl leading-snug sm:text-3xl">{dict.welcome.title}</h1>
+            <h1 className="max-w-[24ch] font-display text-4xl leading-[1.1] sm:text-5xl">{dict.welcome.title}</h1>
             <p className="mt-4 max-w-[60ch] text-ink-muted">{dict.welcome.intro}</p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link href={`/${locale}/sign-in`} className={buttonClass("primary")}>{dict.auth.signIn}</Link>

@@ -1,4 +1,7 @@
 import "@fontsource-variable/readex-pro";
+import "@fontsource-variable/cormorant-garamond";
+import "@fontsource/amiri/400.css";
+import "@fontsource/amiri/700.css";
 import "../globals.css";
 import type { Metadata, Viewport } from "next";
 import { notFound } from "next/navigation";
@@ -22,8 +25,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#eef2f1" },
-    { media: "(prefers-color-scheme: dark)", color: "#0e1514" },
+    { color: "#0a0f14" },
   ],
 };
 

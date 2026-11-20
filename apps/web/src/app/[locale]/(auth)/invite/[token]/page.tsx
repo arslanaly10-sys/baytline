@@ -33,7 +33,7 @@ export default async function Invite({ params }: { params: Promise<{ locale: str
 
   return (
     <div>
-      <h1 className="text-2xl">{format(dict.invite.title, { org: inv.orgName })}</h1>
+      <h1 className="font-display text-4xl leading-[1.05]">{format(dict.invite.title, { org: inv.orgName })}</h1>
       <p className="mt-2 text-ink-muted">{format(dict.invite.asRole, { role: roleLabel })}</p>
       <p className="mt-1 text-sm text-ink-muted">
         {forEmail[0]}

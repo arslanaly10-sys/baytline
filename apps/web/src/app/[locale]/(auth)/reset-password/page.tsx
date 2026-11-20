@@ -25,7 +25,7 @@ export default async function ResetPassword({
   if (!(await isPasswordResetTokenUsable(getDb(), token))) {
     return (
       <div>
-        <h1 className="text-2xl">{dict.auth.resetTitle}</h1>
+        <h1 className="font-display text-4xl leading-[1.05]">{dict.auth.resetTitle}</h1>
         <p className="mt-4 rounded-control border-s-4 border-coral bg-surface px-3 py-2 text-sm">{dict.auth.resetInvalid}</p>
         <p className="mt-6">
           <Link href={`/${locale}/forgot-password`} className="text-sm text-gulf-strong underline underline-offset-4">{dict.auth.forgotTitle}</Link>
@@ -35,7 +35,7 @@ export default async function ResetPassword({
   }
   return (
     <div>
-      <h1 className="text-2xl">{dict.auth.resetTitle}</h1>
+      <h1 className="font-display text-4xl leading-[1.05]">{dict.auth.resetTitle}</h1>
       <ActionForm action={resetPasswordAction} submitLabel={dict.auth.savePassword} pendingLabel={dict.auth.saving} className="mt-8">
         <input type="hidden" name="locale" value={locale} />
         <input type="hidden" name="token" value={token} />

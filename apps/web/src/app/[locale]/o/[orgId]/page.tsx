@@ -31,7 +31,7 @@ export default async function Overview({ params }: { params: Promise<{ locale: s
         <p className="text-sm text-ink-muted">
           {ctx.org.type === "individual" ? session.user.displayName : ctx.org.name}
         </p>
-        <h1 className="mt-1 text-2xl sm:text-3xl">{ws.name}</h1>
+        <h1 className="mt-1 font-display text-4xl leading-[1.05] sm:text-5xl">{ws.name}</h1>
         <p className="mt-3 max-w-[60ch] text-ink-muted">{ws.summary}</p>
         <div className="mt-4 flex flex-wrap items-center gap-2">
           <span className="text-sm text-ink-muted">{dict.common.roles}</span>

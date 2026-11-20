@@ -9,52 +9,33 @@
  * Status is never colour-only: every provenance state also has its own
  * edge treatment (solid, outline, hatch, dashed, double).
  */
+/*
+ * App palette: the marketing site's Gulf night and gold, tuned for dense work screens.
+ * Gold is reserved for primary actions, links and the active place; "needs attention" is a
+ * warm orange so it never reads as a button. Status is never colour-only: every provenance
+ * state also has its own edge treatment (solid, outline, hatch, dashed, double).
+ */
 :root {
-  --canvas: #eef2f1;
-  --surface: #ffffff;
-  --surface-sunk: #e3e9e7;
-  --ink: #17201e;
-  --ink-muted: #51605c;
-  --line: #cdd6d3;
-  --gulf: #0b5566;
-  --gulf-strong: #073d4a;
-  --gulf-ink: #ffffff;
-  --gulf-tint: #dcebee;
-  --mangrove: #2c6a4c;
-  --saffron: #b97a0c;
-  --saffron-tint: #f7ead0;
-  --coral: #ad3e32;
-  --focus: #e3a21a;
-  --rail: #073d4a;
-  --rail-ink: #e4f0f1;
-  --rail-muted: #9fc3c9;
-  --rail-active: #11596a;
-  color-scheme: light;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --canvas: #0e1514;
-    --surface: #152020;
-    --surface-sunk: #0a100f;
-    --ink: #e4ebe9;
-    --ink-muted: #9cada9;
-    --line: #2b3a38;
-    --gulf: #5bb3c4;
-    --gulf-strong: #8fd0dc;
-    --gulf-ink: #06262d;
-    --gulf-tint: #163339;
-    --mangrove: #6fbf96;
-    --saffron: #e8b04a;
-    --saffron-tint: #3a2e15;
-    --coral: #ef8a7d;
-    --focus: #f0c050;
-    --rail: #0a1f23;
-    --rail-ink: #dcebee;
-    --rail-muted: #86a8ae;
-    --rail-active: #163a41;
-    color-scheme: dark;
-  }
+  --canvas: #0a0f14;
+  --surface: #121a22;
+  --surface-sunk: #0d141b;
+  --ink: #efe6d3;
+  --ink-muted: #a3abb3;
+  --line: #26333f;
+  --gulf: #c9a24a;          /* primary action */
+  --gulf-strong: #e8c97f;   /* links, emphasis, hover */
+  --gulf-ink: #0a0f14;      /* text on primary */
+  --gulf-tint: #221d12;     /* selected / hover rows */
+  --mangrove: #74c69d;      /* confirmed, good */
+  --saffron: #f0a35e;       /* needs attention */
+  --saffron-tint: #3a2616;
+  --coral: #f08c80;         /* problem */
+  --focus: #e8c97f;
+  --rail: #070b0f;
+  --rail-ink: #efe6d3;
+  --rail-muted: #98a0a8;
+  --rail-active: #1a222b;
+  color-scheme: dark;
 }
 
 @theme inline {
@@ -185,7 +166,7 @@
 
 /* ------------------------------------------------------------------
  * Marketing site theme. Gulf night, warm gold, sand.
- * Scoped to [data-site] so the app keeps its own palette until the restyle milestone.
+ * The app shares this palette through the tokens above.
  * ------------------------------------------------------------------ */
 :root {
   --s-night: #0a0f14;
@@ -206,7 +187,7 @@ html:has([data-site]) { background: var(--s-night); color-scheme: dark; }
   --focus: var(--s-gold-light);
 }
 /* Arabic headlines use Amiri (a classic naskh), Latin headlines Cormorant Garamond. */
-[data-site] .font-display:lang(ar), [data-site]:lang(ar) .font-display { font-family: "Amiri", serif; font-weight: 700; letter-spacing: 0; }
+.font-display:lang(ar), :lang(ar) .font-display { font-family: "Amiri", serif; font-weight: 700; letter-spacing: 0; }
 [data-site] ::selection { background: var(--s-gold); color: var(--s-night); }
 
 /* Lining figures in the display face: Cormorant defaults to old-style numerals. */

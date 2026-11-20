@@ -20,7 +20,7 @@ export default async function SignUp({ params }: { params: Promise<{ locale: str
 
   return (
     <div>
-      <h1 className="text-2xl">{dict.auth.createTitle}</h1>
+      <h1 className="font-display text-4xl leading-[1.05]">{dict.auth.createTitle}</h1>
       <p className="mt-2 text-ink-muted">{dict.auth.createIntro}</p>
       <ActionForm action={signUpAction} submitLabel={dict.auth.create} pendingLabel={dict.auth.creating} className="mt-8">
         <input type="hidden" name="locale" value={locale} />

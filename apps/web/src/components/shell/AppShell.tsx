@@ -52,7 +52,7 @@ export function AppShell({ dict, locale, session, ctx, market, markets, children
         {dict.common.skipToContent}
       </a>
 
-      <aside className="bg-rail text-rail-ink md:sticky md:top-0 md:flex md:h-dvh md:flex-col md:overflow-y-auto">
+      <aside className="border-line bg-rail text-rail-ink md:border-e md:sticky md:top-0 md:flex md:h-dvh md:flex-col md:overflow-y-auto">
         <Link href={`/${locale}/app`} className="flex items-center gap-2.5 px-4 pt-4 pb-3 md:px-5 md:pt-6">
           <BrandMark className="size-7 text-[var(--focus)]" />
           <span className="text-lg font-medium tracking-tight">{dict.brand.name}</span>
@@ -68,7 +68,7 @@ export function AppShell({ dict, locale, session, ctx, market, markets, children
                     href={`/${locale}/o/${m.id}`}
                     aria-current={active ? "true" : undefined}
                     className={`block rounded-control border px-3 py-2 ${
-                      active ? "border-rail-muted/60 bg-rail-active" : "border-transparent text-rail-muted hover:border-rail-muted/30"
+                      active ? "border-gulf/50 bg-rail-active" : "border-transparent text-rail-muted hover:border-rail-muted/30"
                     }`}
                   >
                     <span className="block text-sm font-medium text-rail-ink">{orgLabel(m)}</span>
@@ -92,7 +92,7 @@ export function AppShell({ dict, locale, session, ctx, market, markets, children
       </aside>
 
       <div className="min-w-0">
-        <header className="flex flex-wrap items-center gap-3 border-b border-line bg-surface px-4 py-3 sm:px-8">
+        <header className="flex flex-wrap items-center gap-3 border-b border-line bg-canvas px-4 py-3 sm:px-8">
           {user.isPlaceholder && <PlaceholderBadge label={dict.states.placeholder} hint={dict.states.placeholderHint} />}
           <div className="ms-auto flex flex-wrap items-center gap-3">
             <MarketSwitcher

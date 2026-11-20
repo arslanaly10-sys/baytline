@@ -1,6 +1,3 @@
-import "@fontsource-variable/cormorant-garamond";
-import "@fontsource/amiri/400.css";
-import "@fontsource/amiri/700.css";
 import { Analytics } from "@vercel/analytics/next";
 import { getDictionary } from "@/i18n";
 import { requireLocale } from "@/server/guards";

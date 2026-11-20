@@ -21,7 +21,7 @@ export default async function ForgotPassword({ params }: { params: Promise<{ loc
   if (!getMailer().configured) {
     return (
       <div>
-        <h1 className="text-2xl">{dict.auth.forgotTitle}</h1>
+        <h1 className="font-display text-4xl leading-[1.05]">{dict.auth.forgotTitle}</h1>
         <p className="mt-4 rounded-control border-s-4 border-saffron bg-surface px-3 py-2 text-sm">{dict.auth.resetUnavailable}</p>
         <p className="mt-6">{back}</p>
       </div>
@@ -29,7 +29,7 @@ export default async function ForgotPassword({ params }: { params: Promise<{ loc
   }
   return (
     <div>
-      <h1 className="text-2xl">{dict.auth.forgotTitle}</h1>
+      <h1 className="font-display text-4xl leading-[1.05]">{dict.auth.forgotTitle}</h1>
       <p className="mt-2 text-ink-muted">{dict.auth.forgotIntro}</p>
       <ActionForm action={forgotPasswordAction} submitLabel={dict.auth.sendLink} pendingLabel={dict.auth.sending} className="mt-8">
         <input type="hidden" name="locale" value={locale} />

@@ -27,7 +27,7 @@ export default async function SignIn({
 
   return (
     <div>
-      <h1 className="text-2xl">{dict.auth.signInTitle}</h1>
+      <h1 className="font-display text-4xl leading-[1.05]">{dict.auth.signInTitle}</h1>
       <p className="mt-2 text-ink-muted">{dict.auth.signInIntro}</p>
       {reset === "1" && <p className="mt-4 rounded-control border-s-4 border-mangrove bg-surface px-3 py-2 text-sm">{dict.auth.resetDone}</p>}
       <ActionForm action={signInAction} submitLabel={dict.auth.signIn} pendingLabel={dict.auth.signingIn} className="mt-8">
