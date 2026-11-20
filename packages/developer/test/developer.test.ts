@@ -34,6 +34,15 @@ import {
   updateUnit,
   verifyUnit,
   parseMoney,
+  getLocationProfile,
+  listLocationSummaries,
+  saveLocation,
+  verifyLocation,
+  createPlace,
+  updatePlace,
+  verifyPlace,
+  archivePlace,
+  importPlaces,
 } from "../src";
 
 let db: Db;
@@ -273,5 +282,99 @@ describe("brokerage partners", () => {
     await revokeShare(db, u.sales, f.share);
     expect(await raw(u.brkX, "select id from app.projects")).toEqual([]);
     expect(await raw(u.brkX, "select id from app.units")).toEqual([]);
+  });
+});
+
+describe("location profiles", () => {
+  const school = { kind: "amenity", category: "school", name: "Test school", latitude: "24.7600", longitude: "46.6400" };
+  let schoolId = "", shareY = "";
+
+  it("starts empty and lets only area-profile managers edit", async () => {
+    const p = await getLocationProfile(db, u.fin, f.project);
+    expect(p).toMatchObject({ location: null, places: [], canManage: false, access: "owner" });
+    expect(await code(saveLocation(db, u.fin, f.project, { latitude: "24.75", longitude: "46.63" }))).toBe("forbidden:area_profile.manage");
+    expect(await code(saveLocation(db, u.inv, f.project, { latitude: "46.63", longitude: "24.75" }))).toBe("invalid_input:coordinates_outside_gcc"); // swapped
+    expect(await code(saveLocation(db, u.inv, f.project, { latitude: "24.75" }))).toBe("invalid_input:coordinates");
+    expect(await code(saveLocation(db, u.inv, f.project, { latitude: "24.75", longitude: "46.63", sourceKind: "provider" }))).toBe("invalid_input:source_kind");
+    expect(await saveLocation(db, u.inv, f.project, { address: "King Fahd Road", area: "North", latitude: "24.75", longitude: "46.63", sourceReference: "Site survey plan" })).toContain("coordinates");
+    expect(await saveLocation(db, u.inv, f.project, { address: "King Fahd Road", area: "North", latitude: "24.75", longitude: "46.63", sourceReference: "Site survey plan" })).toEqual([]);
+    expect(await code(getLocationProfile(db, u.devB, f.project))).toBe("not_found");
+  });
+
+  it("records places with their source, computes or keeps distance, never invents it", async () => {
+    expect(await code(createPlace(db, u.inv, f.project, { kind: "infrastructure", category: "rail", name: "Metro extension", stage: "planned" }))).toBe("invalid_input:source_required");
+    expect(await code(createPlace(db, u.inv, f.project, { kind: "amenity", category: "rail", name: "x" }))).toBe("invalid_input:category");
+    expect(await code(createPlace(db, u.inv, f.project, { kind: "amenity", category: "school", name: "x", stage: "planned" }))).toBe("invalid_input:stage");
+    schoolId = await createPlace(db, u.inv, f.project, school);
+    await createPlace(db, u.inv, f.project, { kind: "amenity", category: "retail", name: "Corner market", distanceKm: "0.4" });
+    await createPlace(db, u.inv, f.project, { kind: "amenity", category: "healthcare", name: "Clinic without distance" });
+    await createPlace(db, u.inv, f.project, { kind: "infrastructure", category: "rail", name: "Metro extension", stage: "planned", expectedDate: "2029-01-01", sourceReference: "Transport authority plan, 2025 edition" });
+    await createPlace(db, u.inv, f.project, { kind: "competitor", category: "residential", name: "Other Towers", developerName: "Some developer", stage: "launched", distanceKm: "1.8", sourceReference: "Developer's sales brochure" });
+    const p = await getLocationProfile(db, u.fin, f.project);
+    expect(p.totalPlaces).toBe(5);
+    const byName = Object.fromEntries(p.places.map((x) => [x.name, x]));
+    expect(byName["Test school"]!.distance?.basis).toBe("computed");
+    expect(byName["Test school"]!.distance!.meters).toBeGreaterThan(1000);
+    expect(byName["Corner market"]!.distance).toEqual({ meters: 400, basis: "recorded" });
+    expect(byName["Clinic without distance"]!.distance).toBeNull();
+    expect(byName["Other Towers"]).toMatchObject({ developerName: "Some developer", sourceKind: "manual_entry", sourceReference: "Developer's sales brochure" });
+    expect(p.places.slice(-2).map((x) => x.distance)).toEqual([null, null]); // unknown distances sort last
+  });
+
+  it("filters by kind, category and distance, saying how many lack a distance", async () => {
+    const near = await getLocationProfile(db, u.fin, f.project, { maxDistance: "1000" });
+    expect(near.places.map((x) => x.name)).toEqual(["Corner market"]);
+    expect(near.hiddenWithoutDistance).toBe(2); // the clinic and the metro plan have no distance
+    expect((await getLocationProfile(db, u.fin, f.project, { kind: "competitor" })).places.map((x) => x.name)).toEqual(["Other Towers"]);
+    expect((await getLocationProfile(db, u.fin, f.project, { category: "school" })).places.map((x) => x.name)).toEqual(["Test school"]);
+  });
+
+  it("verifies, and any later change needs verifying again", async () => {
+    expect(await code(verifyPlace(db, u.sales, schoolId))).toBe("forbidden:inventory.verify");
+    await verifyPlace(db, u.inv, schoolId);
+    await verifyLocation(db, u.inv, f.project);
+    let p = await getLocationProfile(db, u.fin, f.project);
+    expect(p.location!.verification).toBe("verified");
+    expect(p.places.find((x) => x.id === schoolId)!.verification).toBe("verified");
+    expect(await updatePlace(db, u.inv, schoolId, { ...school, name: "Test school (renamed)" })).toEqual(["name"]);
+    await saveLocation(db, u.inv, f.project, { address: "King Fahd Road, gate 2", area: "North", latitude: "24.75", longitude: "46.63", sourceReference: "Site survey plan" });
+    p = await getLocationProfile(db, u.fin, f.project);
+    expect(p.location!.verification).toBe("unverified");
+    expect(p.places.find((x) => x.id === schoolId)!.verification).toBe("unverified");
+  });
+
+  it("shares with a brokerage only when the share includes location", async () => {
+    shareY = await grantShare(db, u.sales, { projectId: f.project, brokerageId: u.brkY.orgId, includePricing: false, includeDocuments: false });
+    expect(await code(getLocationProfile(db, u.brkY, f.project))).toBe("not_found");
+    expect(await raw(u.brkY, "select * from app.project_places")).toEqual([]);
+    await updateShare(db, u.sales, shareY, { includePricing: false, includeDocuments: false, includeLocation: true });
+    const p = await getLocationProfile(db, u.brkY, f.project);
+    expect(p).toMatchObject({ access: "partner", canManage: false, canVerify: false, sharedWithPartners: null });
+    expect(p.places.length).toBe(5);
+    expect(await code(createPlace(db, u.brkY, f.project, school))).toBe("not_found");
+    expect(await code(raw(u.brkY, "update app.project_places set name = 'x'"))).toMatch(/^ok$|permission denied/);
+    expect((await raw<{ name: string }>(u.sales, "select name from app.project_places where name = 'x'")).length).toBe(0); // RLS: partner can't change rows
+    await updateShare(db, u.sales, shareY, { includePricing: true, includeDocuments: false }); // older callers leave location as it was
+    expect((await getLocationProfile(db, u.brkY, f.project)).places.length).toBe(5);
+    expect(await code(getLocationProfile(db, u.brkX, f.project))).toBe("not_found"); // its share was revoked
+  });
+
+  it("archives places and imports CSV all-or-nothing, labelled as imported", async () => {
+    await archivePlace(db, u.inv, schoolId);
+    expect((await getLocationProfile(db, u.brkY, f.project)).places.map((x) => x.name)).not.toContain("Test school (renamed)");
+    expect(await code(importPlaces(db, u.inv, f.project, "kind,category,name\n", "x"))).toBe("invalid_input:import_empty");
+    expect(await code(importPlaces(db, u.inv, f.project, "kind,category,name\namenity,park,x\n", ""))).toBe("invalid_input:import_source_required");
+    const wrong = await importPlaces(db, u.inv, f.project, 'kind,category,name,latitude,longitude\namenity,park,"Park, north",24.751,46.631\namenity,castle,Bad category,,\n', "Municipal amenities list");
+    expect(wrong).toEqual({ imported: 0, errors: [{ line: 3, field: "category" }] });
+    const ok = await importPlaces(db, u.inv, f.project, 'kind,category,name,latitude,longitude,source\namenity,park,"Park, north",24.751,46.631,\ninfrastructure,road,Ring road link,,,Roads plan\n', "Municipal amenities list");
+    expect(ok).toEqual({ imported: 2, errors: [] });
+    const p = await getLocationProfile(db, u.inv, f.project);
+    const park = p.places.find((x) => x.name === "Park, north")!;
+    expect(park).toMatchObject({ sourceKind: "structured_import", sourceReference: "Municipal amenities list", verification: "unverified" });
+    expect(p.places.find((x) => x.name === "Ring road link")!.sourceReference).toBe("Roads plan");
+    const summaries = await listLocationSummaries(db, u.fin);
+    expect(summaries.find((x) => x.projectId === f.project)).toMatchObject({ hasCoordinates: true, places: 6 });
+    const types = (await raw<{ event_type: string }>(u.devAdmin, "select distinct event_type from app.audit_events where org_id = $1", [u.devAdmin.orgId])).map((r) => r.event_type);
+    for (const t of ["location.updated", "location.verified", "place.created", "place.updated", "place.verified", "place.archived", "place.imported"]) expect(types).toContain(t);
   });
 });

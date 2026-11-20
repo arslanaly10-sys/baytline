@@ -6,12 +6,12 @@ import { createOrganization, ensurePersonalWorkspace, IdentityError, inviteMembe
 import { createBootstrapInvitation } from "../../identity/src/bootstrap";
 import {
   createPlan, createPlanVersion, createPriceList, createPriceVersion, createProject, createUnit, decidePlanVersion, decidePriceVersion,
-  grantShare, savePhase, savePlanDraft, savePriceDraft, submitPlanVersion, submitPriceVersion, verifyUnit,
+  createPlace, grantShare, saveLocation, savePhase, savePlanDraft, savePriceDraft, submitPlanVersion, submitPriceVersion, verifyUnit,
 } from "../../developer/src";
 import { createPmUnit, createProperty, updatePmUnit } from "../../management/src";
 import {
   answerSupportRequest, cancelAppointment, compareListings, confirmAppointment, confirmRental, declineAppointment, getProjectPublication,
-  getPublicProject, getPublicRental, listInbox, listMyRequests, listSupportQueue, parseCompareRefs, publishProject, publishRental,
+  getPublicLocation, getPublicProject, getPublicRental, listInbox, listMyRequests, listSupportQueue, parseCompareRefs, publishProject, publishRental,
   searchListings, setEnquiryStatus, submitAppointment, submitEnquiry, submitSupportRequest, unitAvailability, validateSlots, withdrawProject, withdrawRental,
 } from "../src";
 
@@ -185,6 +185,20 @@ describe("publishing", () => {
     expect(await code(getPublicRental(db, f.pmUnit))).toBe("not_found");
     await updatePmUnit(db, u.pmAdmin, f.pmUnit, { code: "C-1", unitType: "apartment", bedrooms: "2", areaSqm: "100", occupancy: "vacant" });
     expect((await getPublicRental(db, f.pmUnit)).id).toBe(f.pmUnit);
+  });
+});
+
+describe("public location", () => {
+  it("appears only when the developer chooses to show it", async () => {
+    await saveLocation(db, u.inv, f.project, { address: "Olaya", latitude: "24.70", longitude: "46.68", sourceReference: "Survey" });
+    await createPlace(db, u.inv, f.project, { kind: "amenity", category: "park", name: "Park", distanceKm: "0.6" });
+    expect(await getPublicLocation(db, f.project)).toBeNull();
+    await publishProject(db, u.sales, f.project, { unitIds: [f.unitA, f.unitB], showPrices: true, showPaymentPlans: true, showLocation: true });
+    const l = await getPublicLocation(db, f.project);
+    expect(l).toMatchObject({ address: "Olaya", verification: "unverified", sourceKind: "manual_entry" });
+    expect(l!.places).toMatchObject([{ name: "Park", distance: { meters: 600, basis: "recorded" } }]);
+    await publishProject(db, u.sales, f.project, { unitIds: [f.unitA, f.unitB], showPrices: true, showPaymentPlans: true });
+    expect(await getPublicLocation(db, f.project)).toBeNull();
   });
 });
 

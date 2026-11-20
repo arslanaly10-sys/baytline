@@ -1,3 +1,4 @@
+import { placeDistance as _placeDistance, toLatLng as _toLatLng, type LatLng as _LatLng, type PlaceDistance as _PlaceDistance } from "@baytline/core";
 import { availabilityLabel, COMPARE_LIMIT, MARKETS, isMarketCode, type AvailabilityLabel, type MarketCode, type SourceKind, type VerificationStatus } from "@baytline/core";
 import { withAppTx, type Client, type Db } from "@baytline/db";
 import { f, IdentityError, like } from "./guard";
@@ -460,4 +461,42 @@ export async function listPublicMarkets(db: Db): Promise<PublicMarket[]> {
       code: r.code, name: { en: r.name_en, ar: r.name_ar }, currency: r.currency, timeZone: r.time_zone, numberingSystem: r.numbering_system, dateStyle: r.date_style,
     })),
   );
+}
+
+// ---------------------------------------------------------------- location profile (milestone 8)
+
+
+export type PublicPlace = {
+  id: string; kind: string; category: string; name: string; description: string | null; coordinates: _LatLng | null; distance: _PlaceDistance;
+  stage: string | null; expectedDate: string | null; developerName: string | null; sourceKind: string; sourceReference: string | null;
+  verification: "unverified" | "verified"; updatedAt: Date;
+};
+export type PublicLocation = {
+  address: string | null; area: string | null; coordinates: _LatLng | null; sourceKind: string; sourceReference: string | null;
+  verification: "unverified" | "verified"; verifiedAt: Date | null; updatedAt: Date; places: PublicPlace[];
+};
+
+/** The location profile of a published project, only when its developer chose to show it. Null otherwise. */
+export async function getPublicLocation(db: Db, projectId: string): Promise<PublicLocation | null> {
+  const pid = f.id(projectId);
+  return publicTx(db, async (c) => {
+    const l = (await c.query("select * from app.pub_locations where project_id = $1", [pid])).rows[0];
+    const places = (await c.query("select * from app.pub_places where project_id = $1 order by name", [pid])).rows;
+    if (!l && !places.length) return null;
+    const origin = l ? _toLatLng(l.latitude, l.longitude) : null;
+    return {
+      address: l?.address ?? null, area: l?.area ?? null, coordinates: origin, sourceKind: l?.source_kind ?? "manual_entry", sourceReference: l?.source_reference ?? null,
+      verification: l?.verification ?? "unverified", verifiedAt: l?.verified_at ?? null, updatedAt: l?.updated_at ?? new Date(0),
+      places: places
+        .map((r) => {
+          const coordinates = _toLatLng(r.latitude, r.longitude);
+          return {
+            id: r.id, kind: r.kind, category: r.category, name: r.name, description: r.description, coordinates,
+            distance: _placeDistance(origin, coordinates, r.recorded_distance_m), stage: r.stage, expectedDate: r.expected_date,
+            developerName: r.developer_name, sourceKind: r.source_kind, sourceReference: r.source_reference, verification: r.verification, updatedAt: r.updated_at,
+          };
+        })
+        .sort((a, b) => (a.distance?.meters ?? Infinity) - (b.distance?.meters ?? Infinity)),
+    };
+  });
 }

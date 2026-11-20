@@ -16,6 +16,7 @@ export type ProjectPublication = {
   status: "published" | "withdrawn" | "never";
   showPrices: boolean;
   showPaymentPlans: boolean;
+  showLocation: boolean;
   routeBrokerageOrgId: string | null;
   publishedAt: Date | null;
   publishedByName: string | null;
@@ -44,6 +45,7 @@ export async function getProjectPublication(db: Db, actor: Actor, projectId: str
       status: pub ? pub.status : "never",
       showPrices: pub?.show_prices ?? false,
       showPaymentPlans: pub?.show_payment_plans ?? false,
+      showLocation: pub?.show_location ?? false,
       routeBrokerageOrgId: pub?.route_brokerage_org_id ?? null,
       publishedAt: pub?.published_at ?? null,
       publishedByName: pub?.by_name ?? null,
@@ -54,7 +56,7 @@ export async function getProjectPublication(db: Db, actor: Actor, projectId: str
   });
 }
 
-export type PublishProjectInput = { unitIds: unknown[]; showPrices: boolean; showPaymentPlans: boolean; routeBrokerageOrgId?: unknown };
+export type PublishProjectInput = { unitIds: unknown[]; showPrices: boolean; showPaymentPlans: boolean; showLocation?: boolean; routeBrokerageOrgId?: unknown };
 
 export async function publishProject(db: Db, actor: Actor, projectId: string, i: PublishProjectInput): Promise<void> {
   const pid = f.id(projectId);
@@ -66,17 +68,17 @@ export async function publishProject(db: Db, actor: Actor, projectId: string, i:
     try {
       if (existing) {
         await c.query(
-          `update app.project_publications set status = 'published', show_prices = $2, show_payment_plans = $3, route_brokerage_org_id = $4,
+          `update app.project_publications set status = 'published', show_prices = $2, show_payment_plans = $3, route_brokerage_org_id = $4, show_location = $6,
                   updated_at = now(), updated_by = $5, published_at = case when status = 'withdrawn' then now() else published_at end,
                   published_by = case when status = 'withdrawn' then $5 else published_by end, withdrawn_at = null, withdrawn_by = null
             where project_id = $1`,
-          [pid, i.showPrices, i.showPaymentPlans, route, actor.userId],
+          [pid, i.showPrices, i.showPaymentPlans, route, actor.userId, i.showLocation === true],
         );
       } else {
         const ok = await c.query(
-          `insert into app.project_publications (project_id, org_id, status, show_prices, show_payment_plans, route_brokerage_org_id, published_by)
-           select id, org_id, 'published', $2, $3, $4, $5 from app.projects where id = $1 and org_id = app.current_org_id()`,
-          [pid, i.showPrices, i.showPaymentPlans, route, actor.userId],
+          `insert into app.project_publications (project_id, org_id, status, show_prices, show_payment_plans, route_brokerage_org_id, published_by, show_location)
+           select id, org_id, 'published', $2, $3, $4, $5, $6 from app.projects where id = $1 and org_id = app.current_org_id()`,
+          [pid, i.showPrices, i.showPaymentPlans, route, actor.userId, i.showLocation === true],
         );
         if (!ok.rowCount) throw new IdentityError("not_found");
       }
@@ -91,7 +93,7 @@ export async function publishProject(db: Db, actor: Actor, projectId: string, i:
     await audit(c, actor, {
       type: existing?.status === "published" ? "listing.updated" : "listing.published",
       target: { type: "project", id: pid },
-      metadata: { units: unitIds.length, prices: i.showPrices, plans: i.showPaymentPlans, routed: route ? "brokerage" : "developer" },
+      metadata: { units: unitIds.length, prices: i.showPrices, plans: i.showPaymentPlans, location: i.showLocation === true, routed: route ? "brokerage" : "developer" },
     });
   });
 }

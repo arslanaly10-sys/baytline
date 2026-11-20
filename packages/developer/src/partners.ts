@@ -28,6 +28,8 @@ export type ShareRow = {
   brokerageName: string;
   includePricing: boolean;
   includeDocuments: boolean;
+  /** Location profile (milestone 8). Off unless the developer turns it on for this brokerage. */
+  includeLocation: boolean;
   status: "active" | "revoked";
   grantedAt: Date;
   grantedByName: string | null;
@@ -61,6 +63,7 @@ export async function listShares(db: Db, actor: Actor, s: { projectId?: string; 
         brokerageName: r.brokerage_name ?? "",
         includePricing: r.include_pricing,
         includeDocuments: r.include_documents,
+        includeLocation: r.include_location,
         status: r.status,
         grantedAt: r.granted_at,
         grantedByName: r.granted_by_name,
@@ -73,7 +76,7 @@ export async function listShares(db: Db, actor: Actor, s: { projectId?: string; 
 export async function grantShare(
   db: Db,
   actor: Actor,
-  input: { projectId: string; brokerageId: string; includePricing: boolean; includeDocuments: boolean },
+  input: { projectId: string; brokerageId: string; includePricing: boolean; includeDocuments: boolean; includeLocation?: boolean },
 ): Promise<string> {
   const pid = id(input.projectId);
   const bid = id(input.brokerageId);
@@ -89,14 +92,14 @@ export async function grantShare(
     try {
       await c.query("savepoint s");
       const { rows } = await c.query<{ id: string }>(
-        `insert into app.project_shares (org_id, project_id, brokerage_org_id, include_pricing, include_documents, granted_by)
-         values (app.current_org_id(), $1, $2, $3, $4, $5) returning id`,
-        [pid, bid, input.includePricing, input.includeDocuments, actor.userId],
+        `insert into app.project_shares (org_id, project_id, brokerage_org_id, include_pricing, include_documents, include_location, granted_by)
+         values (app.current_org_id(), $1, $2, $3, $4, $5, $6) returning id`,
+        [pid, bid, input.includePricing, input.includeDocuments, input.includeLocation === true, actor.userId],
       );
       await audit(c, actor, {
         type: "partner_share.granted",
         target: { type: "project_share", id: rows[0]!.id },
-        metadata: { pricing: input.includePricing, documents: input.includeDocuments },
+        metadata: { pricing: input.includePricing, documents: input.includeDocuments, location: input.includeLocation === true },
       });
       return rows[0]!.id;
     } catch (e) {
@@ -109,22 +112,25 @@ export async function grantShare(
   });
 }
 
-export async function updateShare(db: Db, actor: Actor, shareId: string, input: { includePricing: boolean; includeDocuments: boolean }): Promise<void> {
+export async function updateShare(db: Db, actor: Actor, shareId: string, input: { includePricing: boolean; includeDocuments: boolean; includeLocation?: boolean }): Promise<void> {
   const sid = id(shareId);
   await withAppTx(db, actor, async (c) => {
     const ctx = await requireDeveloper(c, actor, "partner.manage");
-    const { rows } = await c.query("select include_pricing from app.project_shares where id = $1 and status = 'active' for update", [sid]);
+    const { rows } = await c.query("select include_pricing, include_location from app.project_shares where id = $1 and status = 'active' for update", [sid]);
     if (!rows[0]) throw new IdentityError("not_found");
     if (input.includePricing && !rows[0].include_pricing && !can(ctx, "price.change.request") && !can(ctx, "price.change.approve")) {
       throw new IdentityError("forbidden", "pricing_share");
     }
-    await c.query("update app.project_shares set include_pricing = $2, include_documents = $3, updated_at = now(), updated_by = $4 where id = $1", [
+    // Callers that predate location sharing leave it as it was.
+    const location = input.includeLocation ?? rows[0].include_location;
+    await c.query("update app.project_shares set include_pricing = $2, include_documents = $3, include_location = $4, updated_at = now(), updated_by = $5 where id = $1", [
       sid,
       input.includePricing,
       input.includeDocuments,
+      location,
       actor.userId,
     ]);
-    await audit(c, actor, { type: "partner_share.updated", target: { type: "project_share", id: sid }, metadata: { pricing: input.includePricing, documents: input.includeDocuments } });
+    await audit(c, actor, { type: "partner_share.updated", target: { type: "project_share", id: sid }, metadata: { pricing: input.includePricing, documents: input.includeDocuments, location } });
   });
 }
 

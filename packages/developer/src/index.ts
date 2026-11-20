@@ -12,3 +12,8 @@ export { brokerageDirectory, listShares, grantShare, updateShare, revokeShare, l
 export type { BrokerageOption, ShareRow, PendingApproval } from "./partners";
 export { parseMoney, minorToInput, currencyDigits } from "./validation";
 export type { VersionMeta } from "./versions";
+export {
+  getLocationProfile, listLocationSummaries, saveLocation, verifyLocation, createPlace, updatePlace, verifyPlace, archivePlace, importPlaces,
+  filterPlaces, mapPlace, parseCsv, validatePlace, IMPORT_COLUMNS, IMPORT_MAX_ROWS,
+} from "./location";
+export type { LocationProfile, LocationRecord, PlaceRow, PlaceInput, LocationInput, LocationFilters, LocationSummary, ImportResult } from "./location";

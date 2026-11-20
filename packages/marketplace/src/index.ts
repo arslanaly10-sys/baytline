@@ -1,5 +1,5 @@
-export { listPublicMarkets, searchListings, getPublicProject, getPublicRental, compareListings, parseCompareRefs, unitAvailability, rentalAvailability, PUBLIC_PROPERTY_TYPES } from "./public";
-export type { PublicMarket, Availability, AvailabilityState, PublicUnit, PublicRental, PublicProject, PublicProjectCard, PublicPlan, SearchFilters, SearchResult, CompareItem, Fact, FactBasis } from "./public";
+export { getPublicLocation, listPublicMarkets, searchListings, getPublicProject, getPublicRental, compareListings, parseCompareRefs, unitAvailability, rentalAvailability, PUBLIC_PROPERTY_TYPES } from "./public";
+export type { PublicLocation, PublicPlace, PublicMarket, Availability, AvailabilityState, PublicUnit, PublicRental, PublicProject, PublicProjectCard, PublicPlan, SearchFilters, SearchResult, CompareItem, Fact, FactBasis } from "./public";
 export { submitEnquiry, submitAppointment, cancelAppointment, submitSupportRequest, listMyRequests, validateSlots } from "./customer";
 export type { EnquiryInput, AppointmentInput, SupportInput, SlotInput, MyEnquiry, MyAppointment, MySupportRequest } from "./customer";
 export {
