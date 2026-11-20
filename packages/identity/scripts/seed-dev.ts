@@ -34,6 +34,9 @@ const USERS: { email: string; name: string; memberships: [string, Role][]; perso
   { email: "developer-inventory@placeholder.test", name: "Placeholder inventory manager", memberships: [["dev", "developer_inventory_manager"]] },
   { email: "developer-finance@placeholder.test", name: "Placeholder finance", memberships: [["dev", "developer_finance"]] },
   { email: "pm-admin@placeholder.test", name: "Placeholder management admin", memberships: [["pm", "pm_admin"]] },
+  { email: "pm-leasing@placeholder.test", name: "Placeholder leasing manager", memberships: [["pm", "pm_leasing_manager"]] },
+  { email: "pm-maintenance@placeholder.test", name: "Placeholder maintenance coordinator", memberships: [["pm", "pm_maintenance_coordinator"]] },
+  { email: "pm-finance@placeholder.test", name: "Placeholder management finance", memberships: [["pm", "pm_finance"]] },
   { email: "broker-admin@placeholder.test", name: "Placeholder brokerage admin", memberships: [["brk", "brokerage_admin"]] },
   { email: "agent@placeholder.test", name: "Placeholder agent", memberships: [["brk", "brokerage_agent"]], personal: true },
   { email: "customer@placeholder.test", name: "Placeholder customer", memberships: [], personal: true },
@@ -102,6 +105,47 @@ try {
       );
     }
     console.log("created sample project (flagged as sample)");
+  }
+
+  // Development-only sample portfolio for the property manager: property, units and tenant flagged
+  // is_sample. One sample lease and one sample request so the screens have something to show.
+  const pmOrg = orgIds["pm"]!;
+  const hasPm = await c.query("select 1 from app.pm_properties where org_id = $1 and is_sample", [pmOrg]);
+  if (!hasPm.rowCount) {
+    const { rows: pp } = await c.query<{ id: string }>(
+      `insert into app.pm_properties (org_id, name, market, city, address, property_type, owner_name, management_basis, notes, is_sample)
+       values ($1, 'Sample residence (not real)', 'QA', 'Sample city', 'Sample street', 'residential_building', 'Sample owner (not real)',
+               'full_management', 'Development-only sample record for trying the workspace.', true) returning id`,
+      [pmOrg],
+    );
+    const unitIds: Record<string, string> = {};
+    for (const [code, type, beds, area, floor, occ] of [
+      ["R-101", "apartment", 1, "68", 1, "occupied"],
+      ["R-102", "apartment", 2, "104", 1, "vacant"],
+      ["R-201", "apartment", 2, "104", 2, "notice_given"],
+      ["R-301", "apartment", 3, "142", 3, "under_maintenance"],
+    ] as const) {
+      unitIds[code] = (await c.query<{ id: string }>(
+        `insert into app.pm_units (org_id, property_id, code, unit_type, bedrooms, area_sqm, floor, occupancy, is_sample)
+         values ($1, $2, $3, $4, $5, $6, $7, $8, true) returning id`,
+        [pmOrg, pp[0]!.id, code, type, beds, area, floor, occ],
+      )).rows[0]!.id;
+    }
+    const { rows: tn } = await c.query<{ id: string }>(
+      "insert into app.pm_tenants (org_id, display_name, is_sample) values ($1, 'Sample tenant (not real)', true) returning id",
+      [pmOrg],
+    );
+    await c.query(
+      `insert into app.pm_leases (org_id, unit_id, tenant_id, reference, status, start_date, end_date, renewal_date, rent_minor, currency, payment_frequency, payment_terms)
+       values ($1, $2, $3, 'SAMPLE-001', 'active', current_date - 300, current_date + 65, current_date + 35, 9000000, 'QAR', 'quarterly', 'Sample terms, not a real contract.')`,
+      [pmOrg, unitIds["R-101"], tn[0]!.id],
+    );
+    await c.query(
+      `insert into app.pm_requests (org_id, property_id, unit_id, tenant_id, title, category, priority, status)
+       values ($1, $2, $3, $4, 'Sample request: air conditioning not cooling', 'air_conditioning', 'high', 'open')`,
+      [pmOrg, pp[0]!.id, unitIds["R-101"], tn[0]!.id],
+    );
+    console.log("created sample portfolio (flagged as sample)");
   }
 
   await c.query("commit");

@@ -4,6 +4,9 @@ import { format } from "@/i18n/format";
 import { loadOrgPage } from "@/server/guards";
 import { sectionDescription, sectionLabel } from "@/lib/sections";
 import { ProvenanceLegend } from "@/components/ui/ProvenanceLegend";
+import { getPortfolioSummary } from "@baytline/management";
+import { getDb } from "@/server/db";
+import { SummaryGrid } from "@/components/pm/Summary";
 
 export default async function Overview({ params }: { params: Promise<{ locale: string; orgId: string }> }) {
   const { locale, orgId } = await params;
@@ -24,6 +27,9 @@ export default async function Overview({ params }: { params: Promise<{ locale: s
   ] as Permission[];
 
   const showTrust = workspace.id !== "management";
+  const summary = workspace.id === "management" && hasCapability(ctx.principal, "property.view")
+    ? await getPortfolioSummary(getDb(), { userId: session.user.id, orgId: ctx.org.id })
+    : null;
 
   return (
     <div className="space-y-12">
@@ -40,6 +46,8 @@ export default async function Overview({ params }: { params: Promise<{ locale: s
           ))}
         </div>
       </header>
+
+      {summary && <SummaryGrid s={summary} dict={dict} base={base} />}
 
       <section aria-labelledby="planned-title">
         <h2 id="planned-title" className="text-lg">{dict.overview.plannedTitle}</h2>

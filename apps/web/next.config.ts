@@ -9,7 +9,7 @@ const securityHeaders = [
 
 const config: NextConfig = {
   poweredByHeader: false,
-  transpilePackages: ["@baytline/core", "@baytline/db", "@baytline/identity", "@baytline/platform", "@baytline/developer"],
+  transpilePackages: ["@baytline/core", "@baytline/db", "@baytline/identity", "@baytline/platform", "@baytline/developer", "@baytline/management"],
   serverExternalPackages: ["pg"],
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
