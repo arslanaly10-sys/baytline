@@ -48,6 +48,7 @@ docs/                        architecture, identity, roadmap, permission matrix,
 - [Identity, tenancy and audit](docs/identity.md): how auth works and where authorization is enforced
 - [Platform administration](docs/platform-admin.md): admin screens, permissions and protections
 - [Developer workspace](docs/developer-workspace.md): workflows, data structures and enforcement
+- [AI capabilities](docs/ai-capabilities.md): every AI feature, its autonomy limits and safety rules
 - [Architecture, data domains, inventory sources, AI boundaries](docs/architecture.md)
 - [Permission matrix](docs/permission-matrix.md) (generated) and [Roadmap](docs/roadmap.md)
 - [Decision records](docs/decisions/README.md)

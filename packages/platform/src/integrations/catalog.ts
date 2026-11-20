@@ -57,7 +57,7 @@ export const PROVIDERS: readonly ProviderDef[] = [
   {
     key: "email",
     kind: "messaging",
-    milestone: 5,
+    milestone: 8,
     secrets: ["MAIL_PROVIDER"],
     // No real provider adapter exists yet. The console outbox is a development stand-in only.
     adapterAvailable: false,
@@ -65,11 +65,11 @@ export const PROVIDERS: readonly ProviderDef[] = [
   },
   { key: "whatsapp", kind: "messaging", milestone: 8, secrets: ["WHATSAPP_BUSINESS_TOKEN", "WHATSAPP_PHONE_NUMBER_ID"], adapterAvailable: false },
   { key: "sms", kind: "messaging", milestone: 8, secrets: ["SMS_PROVIDER_KEY"], adapterAvailable: false },
-  { key: "document_storage", kind: "storage", milestone: 5, secrets: ["STORAGE_BUCKET", "STORAGE_ACCESS_KEY"], adapterAvailable: false },
-  { key: "ai_gateway", kind: "ai", milestone: 8, secrets: ["AI_PROVIDER_API_KEY"], adapterAvailable: false },
-  { key: "developer_feeds", kind: "data_feed", milestone: 5, secrets: [], adapterAvailable: false },
-  { key: "ad_channels", kind: "advertising", milestone: 10, secrets: [], adapterAvailable: false },
-  { key: "maps_places", kind: "location", milestone: 6, secrets: ["MAPS_API_KEY"], adapterAvailable: false },
+  { key: "document_storage", kind: "storage", milestone: 8, secrets: ["STORAGE_BUCKET", "STORAGE_ACCESS_KEY"], adapterAvailable: false },
+  { key: "ai_gateway", kind: "ai", milestone: 7, secrets: ["AI_PROVIDER_API_KEY"], adapterAvailable: false },
+  { key: "developer_feeds", kind: "data_feed", milestone: 8, secrets: [], adapterAvailable: false },
+  { key: "ad_channels", kind: "advertising", milestone: 11, secrets: [], adapterAvailable: false },
+  { key: "maps_places", kind: "location", milestone: 9, secrets: ["MAPS_API_KEY"], adapterAvailable: false },
 ];
 
 export function providerByKey(key: string): ProviderDef | undefined {

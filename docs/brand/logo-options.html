@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Baytline logo options</title>
+<style>
+  /* Local font only (no network). The final wordmark typeface is chosen after the mark. */
+  @font-face { font-family: "Readex"; src: url("../../../node_modules/.pnpm/@fontsource-variable+readex-pro@5.3.0/node_modules/@fontsource-variable/readex-pro/files/readex-pro-latin-wght-normal.woff2") format("woff2"); font-weight: 160 700; }
+  @font-face { font-family: "Readex"; src: url("../../../node_modules/.pnpm/@fontsource-variable+readex-pro@5.3.0/node_modules/@fontsource-variable/readex-pro/files/readex-pro-arabic-wght-normal.woff2") format("woff2"); font-weight: 160 700; unicode-range: U+0600-06FF, U+FE70-FEFF; }
+  :root {
+    --night: #0a0f14;     /* Gulf night, the film's final scene */
+    --panel: #111820;
+    --gold: #c9a24a;
+    --gold-light: #e8c97f;
+    --gold-deep: #8a6a26;
+    --sand: #efe6d3;
+    --muted: #8d939b;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--night); color: var(--sand); font-family: "Readex", system-ui, sans-serif; }
+  header { padding: 40px 48px 8px; }
+  h1 { font-weight: 400; font-size: 28px; margin: 0; }
+  header p { color: var(--muted); max-width: 70ch; margin: 8px 0 0; line-height: 1.6; }
+  .grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; padding: 28px 48px 48px; }
+  .card { background: var(--panel); border: 1px solid #1f2933; border-radius: 16px; padding: 28px; display: flex; flex-direction: column; gap: 22px; }
+  .tag { color: var(--gold); font-size: 13px; letter-spacing: .02em; }
+  .card h2 { margin: 4px 0 0; font-weight: 500; font-size: 22px; }
+  .card p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.6; }
+  .hero { display: grid; place-items: center; height: 220px; border-radius: 12px; background: radial-gradient(120% 90% at 50% 110%, #2a2010 0%, var(--night) 60%); }
+  .hero svg { width: 132px; height: 132px; }
+  .lockups { display: grid; gap: 14px; }
+  .lockup { display: flex; align-items: center; gap: 14px; padding: 14px 16px; border-radius: 10px; background: var(--night); }
+  .lockup svg { width: 40px; height: 40px; flex: none; }
+  .word { font-size: 26px; font-weight: 500; letter-spacing: -.01em; }
+  .word.ar { font-size: 25px; }
+  .light { background: var(--sand); color: #1b1712; }
+  .sizes { display: flex; align-items: end; gap: 18px; padding: 14px 16px; border-radius: 10px; background: var(--night); }
+  .sizes svg { display: block; }
+  .sizes span { color: var(--muted); font-size: 11px; display: block; text-align: center; margin-top: 6px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Baytline: three original marks</h1>
+  <p>Each mark is drawn from simple strokes so it holds up as a 16-pixel favicon and on a billboard. Shown in gold on Gulf night (the final scene of the homepage film), in an English and an Arabic lockup, in one colour on sand, and at favicon sizes.</p>
+</header>
+
+<!-- Shared symbols. currentColor = main stroke; .sun / .accent use the light gold. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <!-- A: Threshold. A doorway arch with the sun rising on its threshold: "home" and "dawn" in one shape. -->
+    <symbol id="threshold" viewBox="0 0 64 64">
+      <path d="M15 54V31a17 17 0 0 1 34 0v23" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+      <path d="M7 54h50" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+      <path d="M22.5 54a9.5 9.5 0 0 1 19 0z" fill="var(--sun, currentColor)"/>
+    </symbol>
+    <!-- B: Cradle. The Arabic letter baa (the first letter of بيت, home) as a wide bowl holding three rising towers; its dot is the sun below the horizon. -->
+    <symbol id="cradle" viewBox="0 0 64 64">
+      <path d="M7 24c0 17 9.5 23 25 23s25-6 25-23" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+      <!-- One joined skyline silhouette (not separate uprights, which can read as a candelabrum). -->
+      <path d="M20 40V29h7v11zM28.5 40V18h7v22zM37 40V25h7v15z" fill="currentColor"/>
+      <circle cx="32" cy="57" r="4" fill="var(--sun, currentColor)"/>
+    </symbol>
+    <!-- C: Barjeel. A Latin B built from two stacked wind-tower blocks; the vents of the Gulf's traditional wind tower sit in the upper bowl. -->
+    <symbol id="barjeel" viewBox="0 0 64 64">
+      <path d="M19 9v46M19 9h15a10 10 0 0 1 0 20H19M19 29h18a13 13 0 0 1 0 26H19" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M26 14v10M32 14v10" fill="none" stroke="var(--sun, currentColor)" stroke-width="3" stroke-linecap="round"/>
+    </symbol>
+  </defs>
+</svg>
+
+<main class="grid">
+  <section class="card">
+    <div><div class="tag">Option A</div><h2>Threshold</h2></div>
+    <div class="hero" style="color:var(--gold);--sun:var(--gold-light)"><svg><use href="#threshold"/></svg></div>
+    <p>A doorway with the sun rising on its step. It says "a way in to a home" and opens the homepage film at dawn. It's the simplest of the three and the strongest at small sizes.</p>
+    <div class="lockups">
+      <div class="lockup" style="color:var(--gold);--sun:var(--gold-light)"><svg><use href="#threshold"/></svg><span class="word" style="color:var(--sand)">Baytline</span></div>
+      <div class="lockup" dir="rtl" lang="ar" style="color:var(--gold);--sun:var(--gold-light)"><svg><use href="#threshold"/></svg><span class="word ar" style="color:var(--sand)">بيت لاين</span></div>
+      <div class="lockup light" style="color:#1b1712"><svg><use href="#threshold"/></svg><span class="word">Baytline</span></div>
+    </div>
+    <div class="sizes" style="color:var(--gold);--sun:var(--gold-light)">
+      <div><svg width="16" height="16"><use href="#threshold"/></svg><span>16</span></div>
+      <div><svg width="24" height="24"><use href="#threshold"/></svg><span>24</span></div>
+      <div><svg width="32" height="32"><use href="#threshold"/></svg><span>32</span></div>
+      <div><svg width="48" height="48"><use href="#threshold"/></svg><span>48</span></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div><div class="tag">Option B</div><h2>Cradle</h2></div>
+    <div class="hero" style="color:var(--gold);--sun:var(--gold-light)"><svg><use href="#cradle"/></svg></div>
+    <p>The Arabic letter ب (baa), the first letter of بيت ("home"), drawn as a bowl holding three rising towers, with its dot as the sun. Bilingual at its core, and the most distinctive of the three.</p>
+    <div class="lockups">
+      <div class="lockup" style="color:var(--gold);--sun:var(--gold-light)"><svg><use href="#cradle"/></svg><span class="word" style="color:var(--sand)">Baytline</span></div>
+      <div class="lockup" dir="rtl" lang="ar" style="color:var(--gold);--sun:var(--gold-light)"><svg><use href="#cradle"/></svg><span class="word ar" style="color:var(--sand)">بيت لاين</span></div>
+      <div class="lockup light" style="color:#1b1712"><svg><use href="#cradle"/></svg><span class="word">Baytline</span></div>
+    </div>
+    <div class="sizes" style="color:var(--gold);--sun:var(--gold-light)">
+      <div><svg width="16" height="16"><use href="#cradle"/></svg><span>16</span></div>
+      <div><svg width="24" height="24"><use href="#cradle"/></svg><span>24</span></div>
+      <div><svg width="32" height="32"><use href="#cradle"/></svg><span>32</span></div>
+      <div><svg width="48" height="48"><use href="#cradle"/></svg><span>48</span></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div><div class="tag">Option C</div><h2>Barjeel</h2></div>
+    <div class="hero" style="color:var(--gold);--sun:var(--gold-light)"><svg><use href="#barjeel"/></svg></div>
+    <p>A Latin B made of two stacked wind-tower blocks, with the barjeel's vents in the upper bowl. Rooted in Gulf architecture, and it reads clearly as the "B" of Baytline.</p>
+    <div class="lockups">
+      <div class="lockup" style="color:var(--gold);--sun:var(--gold-light)"><svg><use href="#barjeel"/></svg><span class="word" style="color:var(--sand)">Baytline</span></div>
+      <div class="lockup" dir="rtl" lang="ar" style="color:var(--gold);--sun:var(--gold-light)"><svg><use href="#barjeel"/></svg><span class="word ar" style="color:var(--sand)">بيت لاين</span></div>
+      <div class="lockup light" style="color:#1b1712"><svg><use href="#barjeel"/></svg><span class="word">Baytline</span></div>
+    </div>
+    <div class="sizes" style="color:var(--gold);--sun:var(--gold-light)">
+      <div><svg width="16" height="16"><use href="#barjeel"/></svg><span>16</span></div>
+      <div><svg width="24" height="24"><use href="#barjeel"/></svg><span>24</span></div>
+      <div><svg width="32" height="32"><use href="#barjeel"/></svg><span>32</span></div>
+      <div><svg width="48" height="48"><use href="#barjeel"/></svg><span>48</span></div>
+    </div>
+  </section>
+</main>
+</body>
+</html>
