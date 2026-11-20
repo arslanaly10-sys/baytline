@@ -2,6 +2,8 @@
 
 The full list lives in code: `packages/core/src/ai-capabilities.ts` (39 capabilities). The app, the AI-policy admin screen and the marketing site all read from it, and tests enforce its safety rules.
 
+Every call goes through the governed gateway described in [ai-gateway.md](ai-gateway.md): policies, budgets, grounding, redaction and logging.
+
 ## How much the AI may do
 
 Each organization picks a level for each capability, up to that capability's limit:

@@ -4,6 +4,7 @@
  * Use {name} placeholders with `format()`; never build sentences by concatenation.
  */
 import srcEn from "./sources.en";
+import aiEn from "./ai.en";
 const en = {
   brand: {
     name: "Baytline",
@@ -371,6 +372,12 @@ const en = {
       "support.closed": "Support request closed",
       "location.updated": "Project location edited",
       "location.verified": "Project location verified",
+      "ai.requested": "AI request made",
+      "ai.blocked": "AI request stopped by policy",
+      "ai_policy.updated": "AI policy changed",
+      "ai_platform.updated": "Platform AI settings changed",
+      "ai_org.blocked": "AI paused for an organization",
+      "ai_org.unblocked": "AI resumed for an organization",
       "source.created": "Inventory source added",
       "source.updated": "Inventory source edited",
       "source.submitted": "Source sent for platform approval",
@@ -1208,6 +1215,7 @@ const en = {
       cost: "The cost must be a positive amount, with no more decimals than the currency allows.",
     },
   },
+  ai: aiEn,
   src: srcEn,
   loc: {
     tab: "Location",
@@ -1980,7 +1988,7 @@ const en = {
         support: { label: "Customer support", description: "Help requests from customers, and the replies they see." },
         integrations: { label: "Integrations", description: "Services the platform connects to, and whether each one is really connected." },
         sources: { label: "Inventory sources", description: "Authorized feeds, imports and partner connections, their freshness windows and their health." },
-        "ai-policies": { label: "AI policies", description: "What assistants may draft or suggest, consent rules for calls, and which actions always need a person." },
+        "ai-policies": { label: "AI policies", description: "Platform limits for AI: on or off, models, budgets, and usage and cost for each organization." },
         team: { label: "Platform team", description: "People who operate the platform and what each of them can do." },
         audit: { label: "Audit log", description: "Security events across the platform: sign-ins, invitations, membership and role changes, and refused access." },
       },
@@ -1998,6 +2006,7 @@ const en = {
         leads: { label: "Leads", description: "Enquiries from every channel, scored and routed to your sales team or partner brokers." },
         partners: { label: "Partners", description: "Brokerages you work with and which projects each can see." },
         approvals: { label: "Approvals", description: "Unit holds, price changes and payment plans waiting for a decision." },
+        ai: { label: "AI policy", description: "Whether AI runs for your organization, its models, monthly budget and how far each feature may go, plus the request log." },
         team: { label: "Team", description: "People in your organization and what each of them can do." },
         audit: { label: "Audit history", description: "Who signed in, who was invited, whose role changed, and refused access attempts in this organization." },
       },
@@ -2013,6 +2022,7 @@ const en = {
         maintenance: { label: "Maintenance", description: "Work orders, contractors, schedules and spend approvals." },
         enquiries: { label: "Customer requests", description: "Enquiries and viewing requests from Baytline's public listings." },
         approvals: { label: "Approvals", description: "Leases and maintenance spend waiting for a decision." },
+        ai: { label: "AI policy", description: "Whether AI runs for your organization, its models, monthly budget and how far each feature may go, plus the request log." },
         team: { label: "Team", description: "People in your organization and what each of them can do." },
         audit: { label: "Audit history", description: "Who signed in, who was invited, whose role changed, and refused access attempts in this organization." },
       },
@@ -2028,6 +2038,7 @@ const en = {
         commissions: { label: "Commissions", description: "Expected and approved commissions for each deal." },
         conversations: { label: "Conversations", description: "WhatsApp, SMS, email, chat and call history with each client in one thread." },
         inventory: { label: "Partner inventory", description: "Projects and units developers have shared with you, labelled by freshness." },
+        ai: { label: "AI policy", description: "Whether AI runs for your organization, its models, monthly budget and how far each feature may go, plus the request log." },
         team: { label: "Team", description: "Agents in your brokerage and what each of them can do." },
         audit: { label: "Audit history", description: "Who signed in, who was invited, whose role changed, and refused access attempts in this organization." },
       },

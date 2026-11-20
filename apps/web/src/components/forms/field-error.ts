@@ -43,6 +43,15 @@ const ALIASES: Record<string, string[]> = {
   lines_too_many: ["lines"],
   decision_note_required: ["note"],
   no_adapter: ["type"],
+  // AI policy
+  budget_over_ceiling: ["budget"],
+  monthly_budget: ["budget"],
+  enable_needs_model_and_budget: ["models", "budget"],
+  max_output_tokens: ["maxTokens"],
+  org_budget_ceiling: ["ceiling"],
+  platform_cap: ["cap"],
+  log_retention_days: ["retention"],
+  note_required: ["note"],
 };
 
 const camel = (s: string) => s.replace(/_([a-z])/g, (_, c: string) => c.toUpperCase());

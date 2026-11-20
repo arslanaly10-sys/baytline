@@ -158,7 +158,7 @@ language sql stable security definer set search_path = pg_catalog, app as $$
     from app.organizations o
     left join app.ai_org_policies p on p.org_id = o.id
     left join app.ai_requests r on r.org_id = o.id and r.created_at >= date_trunc('month', p_month) and r.created_at < date_trunc('month', p_month) + interval '1 month'
-   where app.is_platform_staff() and o.type <> 'platform'
+   where app.is_platform_staff() and o.type not in ('platform','individual')
    group by o.id, o.name, o.type, p.enabled, p.platform_blocked, p.monthly_budget_micro
    order by coalesce(sum(r.cost_micro), 0) desc, o.name
 $$;
