@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import {
   revokeUserSessions,
   runIntegrationCheck,
+  setDemoRequestStatus,
   setIntegrationEnabled,
   setOrganizationStatus,
   setUserStatus,
@@ -118,5 +119,17 @@ export async function setIntegrationEnabledAction(_prev: FormState, fd: FormData
     return { status: "success", message: dict.integrations.saved };
   } catch (e) {
     return { status: "error", message: messageFor(e, dict.integrations.errors) };
+  }
+}
+
+export async function setDemoRequestStatusAction(_prev: FormState, fd: FormData): Promise<FormState> {
+  const { locale, dict } = await localeAndDict(fd);
+  const actor = await requireActor(locale, str(fd, "orgId"));
+  try {
+    await setDemoRequestStatus(getDb(), actor, str(fd, "requestId"), str(fd, "status"));
+    revalidatePath(`/${locale}/o/${actor.orgId}/demo-requests`);
+    return { status: "success", message: dict.demoRequests.saved };
+  } catch (e) {
+    return { status: "error", message: messageFor(e, dict.demoRequests.errors) };
   }
 }

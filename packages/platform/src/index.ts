@@ -10,5 +10,5 @@ export { deriveStatus, CHECK_FRESH_HOURS } from "./integrations/status";
 export type { IntegrationStatus } from "./integrations/status";
 export { getIntegrationRegistry, runIntegrationCheck, setIntegrationEnabled } from "./integrations/registry";
 export type { IntegrationView } from "./integrations/registry";
-export { submitDemoRequest, listDemoRequests, validateDemoRequest, DEMO_ORG_TYPES } from "./demo";
-export type { DemoRequestInput, DemoRequestRow, DemoResult, DemoField, DemoOrgType } from "./demo";
+export { submitDemoRequest, listDemoRequests, listDemoRequestsByStatus, setDemoRequestStatus, validateDemoRequest, DEMO_ORG_TYPES, DEMO_STATUSES } from "./demo";
+export type { DemoRequestInput, DemoRequestRow, DemoResult, DemoField, DemoOrgType, DemoStatus } from "./demo";

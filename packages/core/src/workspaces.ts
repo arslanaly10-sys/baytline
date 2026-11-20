@@ -29,6 +29,7 @@ export const WORKSPACES: Record<WorkspaceId, WorkspaceDef> = {
       s("users", "platform.users.view", 3),
       s("markets", "platform.markets.view", 3),
       s("integrations", "platform.integrations.view", 3),
+      s("demo-requests", "platform.orgs.view", 5),
       s("sources", "platform.sources.manage", 8),
       s("ai-policies", "platform.ai_policy.manage", 7),
       s("team", "org.members.view", 2),

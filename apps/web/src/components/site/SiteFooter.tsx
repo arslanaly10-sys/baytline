@@ -20,15 +20,15 @@ export function SiteFooter({ dict, locale }: { dict: Dictionary; locale: UiLocal
         <nav aria-label={t.product}>
           <h2 className="text-sm text-sand">{t.product}</h2>
           <ul className="mt-3 space-y-2 text-sm text-mist">
-            {[["#product", n.product], ["#ai", n.ai], ["#control", n.control], ["#markets", n.markets]].map(([h, l]) => (
-              <li key={h}><a href={`${home}${h}`} className="hover:text-gold-light">{l}</a></li>
+            {[["/product", n.product], ["/solutions", n.solutions], ["/pricing", n.pricing], ["/security", n.security]].map(([h, l]) => (
+              <li key={h}><Link href={`${home}${h}`} className="hover:text-gold-light">{l}</Link></li>
             ))}
           </ul>
         </nav>
         <nav aria-label={t.company}>
           <h2 className="text-sm text-sand">{t.company}</h2>
           <ul className="mt-3 space-y-2 text-sm text-mist">
-            <li><a href={`${home}#demo`} className="hover:text-gold-light">{n.bookDemo}</a></li>
+            <li><Link href={`${home}/contact`} className="hover:text-gold-light">{n.bookDemo}</Link></li>
             <li><Link href={`/${locale}/sign-in`} className="hover:text-gold-light">{n.signIn}</Link></li>
           </ul>
         </nav>

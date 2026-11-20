@@ -22,6 +22,7 @@ export const AUDIT_EVENT_TYPES = [
   "integration.checked",
   "integration.enabled",
   "integration.disabled",
+  "demo_request.status_changed",
   "invitation.created",
   "invitation.revoked",
   "invitation.accepted",

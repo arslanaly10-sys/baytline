@@ -1,6 +1,6 @@
 import { isMarketCode, type MarketCode } from "@baytline/core";
-import { withAppTx, withAuthTx, type Db } from "@baytline/db";
-import type { Actor } from "@baytline/identity";
+import { isUuid, withAppTx, withAuthTx, type Db } from "@baytline/db";
+import { IdentityError, writeAudit, type Actor } from "@baytline/identity";
 import { requirePlatform } from "./guard";
 
 export const DEMO_ORG_TYPES = ["developer", "brokerage", "property_manager", "other"] as const;
@@ -71,5 +71,37 @@ export async function listDemoRequests(db: Db, actor: Actor, limit = 100): Promi
       [Math.min(Math.max(limit, 1), 500)],
     );
     return r.rows as DemoRequestRow[];
+  });
+}
+
+export const DEMO_STATUSES = ["new", "contacted", "closed"] as const;
+export type DemoStatus = (typeof DEMO_STATUSES)[number];
+
+export async function listDemoRequestsByStatus(db: Db, actor: Actor, status?: string): Promise<DemoRequestRow[]> {
+  const rows = await listDemoRequests(db, actor, 500);
+  return (DEMO_STATUSES as readonly string[]).includes(status ?? "") ? rows.filter((r) => r.status === status) : rows;
+}
+
+/** Platform admins only. Changes the follow-up status; the submitted details never change. */
+export async function setDemoRequestStatus(db: Db, actor: Actor, id: string, status: string): Promise<void> {
+  if (!(DEMO_STATUSES as readonly string[]).includes(status)) throw new IdentityError("invalid_input");
+  await withAppTx(db, actor, async (c) => {
+    await requirePlatform(c, actor, "platform.orgs.manage");
+    if (!isUuid(id)) throw new IdentityError("not_found");
+    const r = await c.query<{ old: string }>(
+      `update app.demo_requests d set status = $2, updated_at = now(), updated_by = $3
+         from (select id, status as old from app.demo_requests where id = $1 for update) o
+        where d.id = o.id returning o.old`,
+      [id, status, actor.userId],
+    );
+    if (r.rowCount === 0) throw new IdentityError("not_found");
+    await writeAudit(c, {
+      type: "demo_request.status_changed",
+      outcome: "success",
+      actorUserId: actor.userId,
+      orgId: actor.orgId,
+      target: { type: "demo_request", id },
+      metadata: { from: r.rows[0]!.old, to: status },
+    });
   });
 }

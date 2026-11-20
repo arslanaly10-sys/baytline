@@ -19,6 +19,7 @@ import {
   getUserProfile,
   listDemoRequests,
   listMarkets,
+  setDemoRequestStatus,
   submitDemoRequest,
   revokeUserSessions,
   runIntegrationCheck,
@@ -306,5 +307,16 @@ describe("demo requests", () => {
     expect(await code(listDemoRequests(db, devAdmin()))).toMatch(/^forbidden/);
     expect(await raw(f.devAdminId, f.devOrg, "select * from app.demo_requests")).toEqual([]);
     expect(await code(raw(f.adminId, f.plat, "delete from app.demo_requests"))).toMatch(/permission denied/);
+    expect(await code(raw(f.adminId, f.plat, "update app.demo_requests set email = 'x@y.test'"))).toMatch(/permission denied/);
+
+    // Status follow-up: platform admins only, audited.
+    const id = rows[0]!.id;
+    expect(await code(setDemoRequestStatus(db, support(), id, "contacted"))).toMatch(/^forbidden/);
+    expect(await code(setDemoRequestStatus(db, admin(), id, "bogus"))).toBe("invalid_input");
+    expect(await code(setDemoRequestStatus(db, admin(), "00000000-0000-0000-0000-000000000000", "closed"))).toBe("not_found");
+    await setDemoRequestStatus(db, admin(), id, "contacted");
+    expect((await listDemoRequests(db, support())).find((r) => r.id === id)!.status).toBe("contacted");
+    const ev = await raw<{ metadata: Record<string, string> }>(f.adminId, f.plat, "select metadata from app.audit_events where event_type = 'demo_request.status_changed' and target_id = $1", [id]);
+    expect(ev[0]!.metadata).toEqual({ from: "new", to: "contacted" });
   });
 });
