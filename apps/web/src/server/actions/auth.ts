@@ -14,7 +14,7 @@ import {
 import type { FormState } from "@/lib/form-state";
 import { getDb, getMailer } from "../db";
 import { appUrl, clearSessionCookie, getSession, readSessionToken, safeNext, setSessionCookie } from "../session";
-import { localeAndDict, messageFor, str } from "./helpers";
+import { localeAndDict, failed, str } from "./helpers";
 
 export async function signInAction(_prev: FormState, fd: FormData): Promise<FormState> {
   const { locale, dict } = await localeAndDict(fd);
@@ -25,7 +25,7 @@ export async function signInAction(_prev: FormState, fd: FormData): Promise<Form
     await setSessionCookie(r.session.token, r.session.expiresAt);
     target = safeNext(str(fd, "next"), locale);
   } catch (e) {
-    return { status: "error", message: messageFor(e, dict.auth.errors) };
+    return failed(e, dict.auth.errors);
   }
   redirect(target);
 }
@@ -41,7 +41,7 @@ export async function signUpAction(_prev: FormState, fd: FormData): Promise<Form
     });
     await setSessionCookie(s.token, s.expiresAt);
   } catch (e) {
-    return { status: "error", message: messageFor(e, dict.auth.errors) };
+    return failed(e, dict.auth.errors);
   }
   redirect(`/${locale}/app`);
 }
@@ -59,7 +59,7 @@ export async function forgotPasswordAction(_prev: FormState, fd: FormData): Prom
       ? { status: "error", message: dict.auth.resetUnavailable }
       : { status: "success", message: dict.auth.resetSent };
   } catch (e) {
-    return { status: "error", message: messageFor(e, dict.auth.errors) };
+    return failed(e, dict.auth.errors);
   }
 }
 
@@ -69,7 +69,7 @@ export async function resetPasswordAction(_prev: FormState, fd: FormData): Promi
     await resetPassword(getDb(), { token: str(fd, "token"), password: str(fd, "password") });
     await clearSessionCookie();
   } catch (e) {
-    return { status: "error", message: messageFor(e, dict.auth.errors) };
+    return failed(e, dict.auth.errors);
   }
   redirect(`/${locale}/sign-in?reset=1`);
 }
@@ -88,7 +88,7 @@ export async function inviteSignUpAction(_prev: FormState, fd: FormData): Promis
     await setSessionCookie(s.token, s.expiresAt);
     orgId = s.orgId;
   } catch (e) {
-    return { status: "error", message: messageFor(e, { ...dict.auth.errors, ...dict.invite.errors }) };
+    return failed(e, { ...dict.auth.errors, ...dict.invite.errors });
   }
   redirect(`/${locale}/o/${orgId}`);
 }
@@ -101,7 +101,7 @@ export async function acceptInviteAction(_prev: FormState, fd: FormData): Promis
   try {
     orgId = await acceptInvitation(getDb(), session.user.id, str(fd, "token"));
   } catch (e) {
-    return { status: "error", message: messageFor(e, { ...dict.invite.errors, generic: dict.auth.errors.generic }) };
+    return failed(e, { ...dict.invite.errors, generic: dict.auth.errors.generic });
   }
   redirect(`/${locale}/o/${orgId}`);
 }
@@ -121,7 +121,7 @@ export async function openPersonalWorkspaceAction(_prev: FormState, fd: FormData
   try {
     orgId = await ensurePersonalWorkspace(getDb(), session.user);
   } catch (e) {
-    return { status: "error", message: messageFor(e, dict.auth.errors) };
+    return failed(e, dict.auth.errors);
   }
   redirect(`/${locale}/o/${orgId}`);
 }

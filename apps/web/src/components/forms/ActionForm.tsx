@@ -4,6 +4,7 @@ import { startTransition, useActionState, useRef } from "react";
 import type { FormState } from "@/lib/form-state";
 import { IDLE } from "@/lib/form-state";
 import { buttonClass } from "@/lib/button";
+import { useFieldError } from "./field-error";
 
 type Props = {
   action: (prev: FormState, data: FormData) => Promise<FormState>;
@@ -23,6 +24,7 @@ type Props = {
 export function ActionForm({ action, submitLabel, pendingLabel, children, variant = "primary", layout = "stack", className = "" }: Props) {
   const [state, formAction, pending] = useActionState(action, IDLE);
   const ref = useRef<HTMLFormElement>(null);
+  const errorId = useFieldError(ref, state);
 
   return (
     <form
@@ -44,7 +46,7 @@ export function ActionForm({ action, submitLabel, pendingLabel, children, varian
       </div>
       <div aria-live="polite" className={layout === "inline" ? "basis-full" : ""}>
         {state.status === "error" && (
-          <p role="alert" className="rounded-control border-s-4 border-coral bg-surface px-3 py-2 text-sm text-ink">
+          <p id={errorId} role="alert" className="rounded-control border-s-4 border-coral bg-surface px-3 py-2 text-sm text-ink">
             {state.message}
           </p>
         )}

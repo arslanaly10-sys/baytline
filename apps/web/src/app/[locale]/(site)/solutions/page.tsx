@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { getDictionary } from "@/i18n";
+import { siteMeta } from "@/lib/site-meta";
 import { requireLocale } from "@/server/guards";
 import { AI_CAPABILITIES, type WorkspaceId } from "@baytline/core";
 import { AVAILABLE_AUDIENCES, PageHero, Status } from "@/components/site/sections";
@@ -9,9 +10,10 @@ import { AUDIENCE_PHOTO } from "@/lib/photos";
 type Params = { params: Promise<{ locale: string }> };
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
-  const dict = await getDictionary(requireLocale((await params).locale));
+  const locale = requireLocale((await params).locale);
+  const dict = await getDictionary(locale);
   const t = dict.site.pages.solutions;
-  return { title: { absolute: `${t.title} · ${dict.brand.name}` }, description: t.intro };
+  return siteMeta({ locale, path: "/solutions", title: `${t.title} · ${dict.brand.name}`, description: t.intro, brand: dict.brand.name });
 }
 
 const AUDIENCES = [

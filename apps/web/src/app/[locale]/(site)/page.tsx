@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { getDictionary } from "@/i18n";
+import { siteMeta } from "@/lib/site-meta";
 import { requireLocale } from "@/server/guards";
 import { SkylineFilm, type FilmText } from "@/components/site/skyline/SkylineFilm";
 import { AiSection, AudiencesSection, ControlSection, DemoSection, MarketsSection, SecuritySection } from "@/components/site/sections";
@@ -7,8 +8,9 @@ import { AiSection, AudiencesSection, ControlSection, DemoSection, MarketsSectio
 type Params = { params: Promise<{ locale: string }> };
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
-  const dict = await getDictionary(requireLocale((await params).locale));
-  return { title: { absolute: `${dict.brand.name}: ${dict.site.film.c1.title}` }, description: dict.site.film.c1.body };
+  const locale = requireLocale((await params).locale);
+  const dict = await getDictionary(locale);
+  return siteMeta({ locale, path: "", title: `${dict.brand.name}: ${dict.site.film.c1.title}`, description: dict.site.film.c1.body, brand: dict.brand.name });
 }
 
 export default async function HomePage({ params }: Params) {

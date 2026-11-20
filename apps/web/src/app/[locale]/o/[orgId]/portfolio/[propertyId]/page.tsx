@@ -46,12 +46,12 @@ export default async function PropertyPage({ params }: { params: Promise<{ local
           <h2 id="units-title" className="text-lg">{dict.pm.units.title}</h2>
           <p className="mt-1 text-sm text-ink-muted">{dict.pm.units.intro}</p>
         </div>
-        {units.length === 0 ? <Empty>{dict.pm.units.noUnits}</Empty> : <UnitTable dict={dict} units={units} base={base} locale={locale} />}
+        {units.length === 0 ? <Empty action={can("property.manage") ? { href: "#add", label: dict.pm.units.addTitle } : undefined}>{dict.pm.units.noUnits}</Empty> : <UnitTable dict={dict} units={units} base={base} locale={locale} />}
       </section>
 
       {can("property.manage") && (
         <>
-          <Panel title={dict.pm.units.addTitle}>
+          <Panel title={dict.pm.units.addTitle} id="add">
             <ActionForm action={createPmUnitAction} submitLabel={dict.pm.units.create} pendingLabel={dict.pm.units.creating}>
               <Hidden values={hidden} />
               <UnitFields dict={dict} />

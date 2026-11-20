@@ -48,7 +48,7 @@ export default async function MaintenancePage({ params, searchParams }: { params
       </form>
 
       {orders.length === 0 ? (
-        <Empty>{filtered ? t.noMatches : t.noWork}</Empty>
+        <Empty action={!filtered && canManage && properties.length > 0 ? { href: "#add", label: t.addTitle } : undefined}>{filtered ? t.noMatches : t.noWork}</Empty>
       ) : (
         <ul className="grid gap-px overflow-hidden rounded-panel border border-line bg-line">
           {orders.map((w) => (
@@ -73,7 +73,7 @@ export default async function MaintenancePage({ params, searchParams }: { params
       )}
 
       {canManage ? (
-        <Panel title={t.addTitle}>
+        <Panel title={t.addTitle} id="add">
           {properties.length === 0 ? (
             <p className="text-sm text-ink-muted">{dict.pm.properties.noProperties}</p>
           ) : (

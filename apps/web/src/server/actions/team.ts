@@ -6,7 +6,7 @@ import type { FormState } from "@/lib/form-state";
 import { format } from "@/i18n/format";
 import { getDb, getMailer } from "../db";
 import { appUrl } from "../session";
-import { localeAndDict, messageFor, requireActor, str } from "./helpers";
+import { localeAndDict, failed, requireActor, str } from "./helpers";
 
 /** Emails the link when a mailer exists; the link is always shown to the inviter exactly once. */
 async function deliverInvitation(email: string, link: string, orgName: string): Promise<boolean> {
@@ -37,7 +37,7 @@ export async function inviteAction(_prev: FormState, fd: FormData): Promise<Form
       note: emailed ? dict.team.inviteEmailed : dict.team.inviteNotEmailed,
     };
   } catch (e) {
-    return { status: "error", message: messageFor(e, dict.team.errors) };
+    return failed(e, dict.team.errors);
   }
 }
 
@@ -49,7 +49,7 @@ export async function revokeInvitationAction(_prev: FormState, fd: FormData): Pr
     revalidatePath(`/${locale}/o/${actor.orgId}`, "layout");
     return { status: "success", message: dict.team.saved };
   } catch (e) {
-    return { status: "error", message: messageFor(e, dict.team.errors) };
+    return failed(e, dict.team.errors);
   }
 }
 
@@ -61,7 +61,7 @@ export async function changeRoleAction(_prev: FormState, fd: FormData): Promise<
     revalidatePath(`/${locale}/o/${actor.orgId}`, "layout");
     return { status: "success", message: dict.team.saved };
   } catch (e) {
-    return { status: "error", message: messageFor(e, dict.team.errors) };
+    return failed(e, dict.team.errors);
   }
 }
 
@@ -77,7 +77,7 @@ export async function setMemberStatusAction(_prev: FormState, fd: FormData): Pro
     revalidatePath(`/${locale}/o/${actor.orgId}`, "layout");
     return { status: "success", message: dict.team.saved };
   } catch (e) {
-    return { status: "error", message: messageFor(e, dict.team.errors) };
+    return failed(e, dict.team.errors);
   }
 }
 
@@ -102,6 +102,6 @@ export async function createOrganizationAction(_prev: FormState, fd: FormData): 
       note: emailed ? dict.team.inviteEmailed : dict.team.inviteNotEmailed,
     };
   } catch (e) {
-    return { status: "error", message: messageFor(e, { ...dict.orgs.errors, email: dict.orgs.errors.email }) };
+    return failed(e, { ...dict.orgs.errors, email: dict.orgs.errors.email });
   }
 }

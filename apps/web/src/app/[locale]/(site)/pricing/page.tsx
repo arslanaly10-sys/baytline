@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { getDictionary } from "@/i18n";
+import { siteMeta } from "@/lib/site-meta";
 import { requireLocale } from "@/server/guards";
 import Link from "next/link";
 import { PageHero } from "@/components/site/sections";
@@ -7,9 +8,10 @@ import { PageHero } from "@/components/site/sections";
 type Params = { params: Promise<{ locale: string }> };
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
-  const dict = await getDictionary(requireLocale((await params).locale));
+  const locale = requireLocale((await params).locale);
+  const dict = await getDictionary(locale);
   const t = dict.site.pages.pricing;
-  return { title: { absolute: `${t.title} · ${dict.brand.name}` }, description: t.intro };
+  return siteMeta({ locale, path: "/pricing", title: `${t.title} · ${dict.brand.name}`, description: t.intro, brand: dict.brand.name });
 }
 
 export default async function PricingPage({ params }: Params) {

@@ -49,7 +49,7 @@ export default async function LeasingPage({ params, searchParams }: { params: Pr
       </form>
 
       {leases.length === 0 ? (
-        <Empty>{filtered ? t.noMatches : t.noLeases}</Empty>
+        <Empty action={!filtered && canManage && units.length > 0 ? { href: "#add", label: t.addTitle } : undefined}>{filtered ? t.noMatches : t.noLeases}</Empty>
       ) : (
         <ul className="grid gap-px overflow-hidden rounded-panel border border-line bg-line">
           {leases.map((l) => (
@@ -74,7 +74,7 @@ export default async function LeasingPage({ params, searchParams }: { params: Pr
       )}
 
       {canManage ? (
-        <Panel title={t.addTitle}>
+        <Panel title={t.addTitle} id="add">
           {units.length === 0 ? (
             <p className="text-sm text-ink-muted">{dict.pm.units.noUnits}</p>
           ) : (

@@ -14,7 +14,7 @@ import {
 import type { FormState } from "@/lib/form-state";
 import { format } from "@/i18n/format";
 import { getDb } from "../db";
-import { localeAndDict, messageFor, requireActor, str } from "./helpers";
+import { localeAndDict, failed, requireActor, str } from "./helpers";
 
 // Every action: actor from the session cookie, permission re-checked by the service in the database.
 
@@ -32,7 +32,7 @@ export async function updateOrgProfileAction(_prev: FormState, fd: FormData): Pr
     revalidatePath(`/${locale}/o/${actor.orgId}`, "layout");
     return { status: "success", message: dict.orgs.profileSaved };
   } catch (e) {
-    return { status: "error", message: messageFor(e, dict.orgs.errors) };
+    return failed(e, dict.orgs.errors);
   }
 }
 
@@ -44,7 +44,7 @@ export async function setOrgStatusAction(_prev: FormState, fd: FormData): Promis
     revalidatePath(`/${locale}/o/${actor.orgId}`, "layout");
     return { status: "success", message: dict.orgs.statusSaved };
   } catch (e) {
-    return { status: "error", message: messageFor(e, dict.orgs.errors) };
+    return failed(e, dict.orgs.errors);
   }
 }
 
@@ -56,7 +56,7 @@ export async function setUserStatusAction(_prev: FormState, fd: FormData): Promi
     revalidatePath(`/${locale}/o/${actor.orgId}`, "layout");
     return { status: "success", message: dict.users.saved };
   } catch (e) {
-    return { status: "error", message: messageFor(e, dict.users.errors) };
+    return failed(e, dict.users.errors);
   }
 }
 
@@ -68,7 +68,7 @@ export async function revokeSessionsAction(_prev: FormState, fd: FormData): Prom
     revalidatePath(`/${locale}/o/${actor.orgId}`, "layout");
     return { status: "success", message: dict.users.revoked };
   } catch (e) {
-    return { status: "error", message: messageFor(e, dict.users.errors) };
+    return failed(e, dict.users.errors);
   }
 }
 
@@ -92,7 +92,7 @@ export async function updateMarketAction(_prev: FormState, fd: FormData): Promis
     revalidatePath(`/${locale}/o/${actor.orgId}`, "layout");
     return { status: "success", message: changed.length ? dict.marketsAdmin.saved : dict.marketsAdmin.noChange };
   } catch (e) {
-    return { status: "error", message: messageFor(e, dict.marketsAdmin.errors) };
+    return failed(e, dict.marketsAdmin.errors);
   }
 }
 
@@ -106,7 +106,7 @@ export async function runIntegrationCheckAction(_prev: FormState, fd: FormData):
       ? { status: "success", message: dict.integrations.checkOk }
       : { status: "error", message: format(dict.integrations.checkFailed, { summary: r.summary }) };
   } catch (e) {
-    return { status: "error", message: messageFor(e, dict.integrations.errors) };
+    return failed(e, dict.integrations.errors);
   }
 }
 
@@ -118,7 +118,7 @@ export async function setIntegrationEnabledAction(_prev: FormState, fd: FormData
     revalidatePath(`/${locale}/o/${actor.orgId}`, "layout");
     return { status: "success", message: dict.integrations.saved };
   } catch (e) {
-    return { status: "error", message: messageFor(e, dict.integrations.errors) };
+    return failed(e, dict.integrations.errors);
   }
 }
 
@@ -130,6 +130,6 @@ export async function setDemoRequestStatusAction(_prev: FormState, fd: FormData)
     revalidatePath(`/${locale}/o/${actor.orgId}/demo-requests`);
     return { status: "success", message: dict.demoRequests.saved };
   } catch (e) {
-    return { status: "error", message: messageFor(e, dict.demoRequests.errors) };
+    return failed(e, dict.demoRequests.errors);
   }
 }

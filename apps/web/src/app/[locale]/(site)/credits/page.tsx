@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { getDictionary } from "@/i18n";
+import { siteMeta } from "@/lib/site-meta";
 import { requireLocale } from "@/server/guards";
 import { PageHero } from "@/components/site/sections";
 import { Photo } from "@/components/site/Photo";
@@ -8,8 +9,9 @@ import { PHOTOS } from "@/lib/photos";
 type Params = { params: Promise<{ locale: string }> };
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
-  const dict = await getDictionary(requireLocale((await params).locale));
-  return { title: { absolute: `${dict.site.credits.title} · ${dict.brand.name}` }, robots: { index: false } };
+  const locale = requireLocale((await params).locale);
+  const dict = await getDictionary(locale);
+  return siteMeta({ locale, path: "/credits", title: `${dict.site.credits.title} · ${dict.brand.name}`, description: dict.site.credits.intro, brand: dict.brand.name, noindex: true });
 }
 
 export default async function CreditsPage({ params }: Params) {

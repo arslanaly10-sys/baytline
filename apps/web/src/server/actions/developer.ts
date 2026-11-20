@@ -29,7 +29,7 @@ import {
 } from "@baytline/developer";
 import type { FormState } from "@/lib/form-state";
 import { getDb } from "../db";
-import { localeAndDict, messageFor, requireActor, str } from "./helpers";
+import { localeAndDict, failed, requireActor, str } from "./helpers";
 
 // Pattern for every action: actor from the session cookie, org ID only a claim,
 // permission and org membership re-checked by @baytline/developer, RLS underneath.
@@ -49,7 +49,7 @@ async function run(fd: FormData, fn: (c: Ctx) => Promise<string>): Promise<FormS
     c.refresh();
     return { status: "success", message };
   } catch (e) {
-    return { status: "error", message: messageFor(e, c.dict.dev.errors) };
+    return failed(e, c.dict.dev.errors);
   }
 }
 
@@ -71,7 +71,7 @@ export async function createProjectAction(_p: FormState, fd: FormData): Promise<
   try {
     pid = await createProject(getDb(), c.actor, projectInput(fd));
   } catch (e) {
-    return { status: "error", message: messageFor(e, c.dict.dev.errors) };
+    return failed(e, c.dict.dev.errors);
   }
   c.refresh();
   redirect(`/${c.locale}/o/${c.actor.orgId}/projects/${pid}`);
@@ -132,7 +132,7 @@ export async function createPriceVersionAction(_p: FormState, fd: FormData): Pro
   try {
     vid = await createPriceVersion(getDb(), c.actor, str(fd, "listId"), { effectiveFrom: str(fd, "effectiveFrom"), effectiveTo: str(fd, "effectiveTo") });
   } catch (e) {
-    return { status: "error", message: messageFor(e, c.dict.dev.errors) };
+    return failed(e, c.dict.dev.errors);
   }
   c.refresh();
   redirect(`/${c.locale}/o/${c.actor.orgId}/projects/${str(fd, "projectId")}/pricing/prices/${vid}`);
@@ -171,7 +171,7 @@ export async function createPlanVersionAction(_p: FormState, fd: FormData): Prom
   try {
     vid = await createPlanVersion(getDb(), c.actor, str(fd, "planId"), { effectiveFrom: str(fd, "effectiveFrom") });
   } catch (e) {
-    return { status: "error", message: messageFor(e, c.dict.dev.errors) };
+    return failed(e, c.dict.dev.errors);
   }
   c.refresh();
   redirect(`/${c.locale}/o/${c.actor.orgId}/projects/${str(fd, "projectId")}/pricing/plans/${vid}`);

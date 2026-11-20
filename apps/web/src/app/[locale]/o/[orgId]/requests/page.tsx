@@ -50,7 +50,7 @@ export default async function RequestsPage({ params, searchParams }: { params: P
       </form>
 
       {requests.length === 0 ? (
-        <Empty>{filtered ? t.noMatches : t.noRequests}</Empty>
+        <Empty action={!filtered && canManage && properties.length > 0 ? { href: "#add", label: t.addTitle } : undefined}>{filtered ? t.noMatches : t.noRequests}</Empty>
       ) : (
         <ul className="grid gap-px overflow-hidden rounded-panel border border-line bg-line">
           {requests.map((r) => (
@@ -75,7 +75,7 @@ export default async function RequestsPage({ params, searchParams }: { params: P
       )}
 
       {canManage ? (
-        <Panel title={t.addTitle}>
+        <Panel title={t.addTitle} id="add">
           {properties.length === 0 ? (
             <p className="text-sm text-ink-muted">{dict.pm.properties.noProperties}</p>
           ) : (

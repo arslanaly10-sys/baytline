@@ -104,6 +104,8 @@
   :lang(ar) body { line-height: 1.75; }
   h1, h2, h3 { line-height: 1.25; font-weight: 500; text-wrap: balance; }
   p { text-wrap: pretty; }
+  /* Figures line up in columns of data. */
+  table { font-variant-numeric: tabular-nums; }
   :focus-visible {
     outline: 3px solid var(--focus);
     outline-offset: 2px;

@@ -1,6 +1,7 @@
 "use client";
 
-import { startTransition, useActionState } from "react";
+import { startTransition, useActionState, useRef } from "react";
+import { useFieldError } from "@/components/forms/field-error";
 import { IDLE } from "@/lib/form-state";
 import { demoRequestAction } from "@/server/actions/site";
 
@@ -9,7 +10,7 @@ type Props = {
   t: {
     name: string; email: string; phone: string; company: string; country: string; role: string;
     roles: Record<"developer" | "brokerage" | "property_manager" | "other", string>;
-    consent: string; submit: string; sending: string;
+    consent: string; submit: string; sending: string; privacyLink: string;
   };
   markets: { code: string; name: string }[];
   privacyHref: string;
@@ -20,6 +21,8 @@ const label = "block text-sm text-sand/90";
 
 export function DemoForm({ locale, t, markets, privacyHref }: Props) {
   const [state, action, pending] = useActionState(demoRequestAction, IDLE);
+  const ref = useRef<HTMLFormElement>(null);
+  const errorId = useFieldError(ref, state);
   if (state.status === "success") {
     return (
       <p role="status" className="rounded-2xl border border-gold/40 bg-panel p-6 text-lg text-sand">
@@ -29,6 +32,7 @@ export function DemoForm({ locale, t, markets, privacyHref }: Props) {
   }
   return (
     <form
+      ref={ref}
       action={action}
       onSubmit={(e) => {
         e.preventDefault();
@@ -60,7 +64,7 @@ export function DemoForm({ locale, t, markets, privacyHref }: Props) {
       </label>
       <label className="flex items-start gap-3 text-sm text-mist sm:col-span-2">
         <input type="checkbox" name="consent" value="yes" required className="mt-0.5 size-4 accent-[var(--s-gold)]" />
-        <span>{t.consent} <a href={privacyHref} className="text-gold-light underline underline-offset-2">↗</a></span>
+        <span>{t.consent} <a href={privacyHref} aria-label={t.privacyLink} className="text-gold-light underline underline-offset-2"><span aria-hidden="true">↗</span></a></span>
       </label>
       <div className="sm:col-span-2">
         <button type="submit" disabled={pending} className="rounded-full bg-gold px-6 py-3 font-medium text-night hover:bg-gold-light disabled:opacity-60">
@@ -68,7 +72,7 @@ export function DemoForm({ locale, t, markets, privacyHref }: Props) {
         </button>
       </div>
       <div aria-live="polite" className="sm:col-span-2">
-        {state.status === "error" && <p role="alert" className="rounded-xl border-s-4 border-red-400 bg-panel px-3 py-2 text-sm text-sand">{state.message}</p>}
+        {state.status === "error" && <p id={errorId} role="alert" className="rounded-xl border-s-4 border-red-400 bg-panel px-3 py-2 text-sm text-sand">{state.message}</p>}
       </div>
     </form>
   );

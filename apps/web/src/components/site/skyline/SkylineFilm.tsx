@@ -162,7 +162,7 @@ export function SkylineFilm({ t }: { t: FilmText }) {
                 ref={(el) => {
                   chapters.current[i] = el;
                 }}
-                className="absolute inset-x-0 bottom-[14vh] z-10 mx-auto max-w-3xl px-6 text-center will-change-transform"
+                className="absolute inset-x-0 bottom-[14vh] z-10 mx-auto max-w-3xl px-6 text-center"
                 style={{ opacity: i === 0 ? 1 : 0, visibility: i === 0 ? "visible" : "hidden" }}
               >
                 {i === 0 ? (
@@ -210,7 +210,7 @@ function Finale({ t, innerRef, hidden }: { t: FilmText; innerRef?: React.Ref<HTM
   return (
     <div
       ref={innerRef}
-      className={hidden ? "absolute inset-x-0 bottom-[6vh] z-10 mx-auto max-w-5xl px-6 will-change-transform" : "relative z-10 mx-auto w-full max-w-5xl"}
+      className={hidden ? "absolute inset-x-0 bottom-[6vh] z-10 mx-auto max-w-5xl px-6" : "relative z-10 mx-auto w-full max-w-5xl"}
       style={hidden ? { opacity: 0, visibility: "hidden" } : undefined}
     >
       <div className="grid items-end gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:gap-8">

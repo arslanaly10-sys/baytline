@@ -46,7 +46,7 @@ export default async function PortfolioPage({ params, searchParams }: { params: 
         </form>
 
         {properties.length === 0 ? (
-          <Empty>{filtered ? t.noMatches : t.noProperties}</Empty>
+          <Empty action={!filtered && can("property.manage") ? { href: "#add", label: t.addTitle } : undefined}>{filtered ? t.noMatches : t.noProperties}</Empty>
         ) : (
           <ul className="grid gap-px overflow-hidden rounded-panel border border-line bg-line">
             {properties.map((p) => (
@@ -70,7 +70,7 @@ export default async function PortfolioPage({ params, searchParams }: { params: 
       </section>
 
       {can("property.manage") ? (
-        <Panel title={t.addTitle}>
+        <Panel title={t.addTitle} id="add">
           <ActionForm action={createPropertyAction} submitLabel={t.create} pendingLabel={t.creating}>
             <Hidden values={{ locale: page.locale, orgId }} />
             <PropertyFields dict={dict} locale={page.locale} markets={markets} />

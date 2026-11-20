@@ -47,7 +47,10 @@ export default async function ProjectsPage({ params, searchParams }: { params: P
       </form>
 
       {projects.length === 0 ? (
-        <p className="rounded-panel border-2 border-dashed border-line px-6 py-10 text-center text-ink-muted">{filtered ? t.noMatches : t.noProjects}</p>
+        <div className="rounded-panel border-2 border-dashed border-line px-6 py-10 text-center">
+          <p className="text-ink-muted">{filtered ? t.noMatches : t.noProjects}</p>
+          {!filtered && canManage && <a href="#add-project" className="mt-4 inline-block rounded-control bg-gulf px-4 py-2 text-sm font-medium text-gulf-ink hover:bg-gulf-strong">{t.addTitle}</a>}
+        </div>
       ) : (
         <ul className="grid gap-px overflow-hidden rounded-panel border border-line bg-line">
           {projects.map((p) => (

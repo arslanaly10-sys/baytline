@@ -4,6 +4,7 @@ import { format } from "@/i18n/format";
 import { grantShareAction, revokeShareAction, updateShareAction } from "@/server/actions/developer";
 import { Chip } from "@/components/ui/Chip";
 import { ActionForm } from "@/components/forms/ActionForm";
+import { ConfirmAction } from "@/components/forms/ConfirmAction";
 import { SelectField } from "@/components/forms/Field";
 
 type Props = {
@@ -71,10 +72,10 @@ export function SharesPanel({ dict, locale, orgId, shares, canManage, brokerages
                         <Check name="includePricing" label={t.includePricing} defaultChecked={s.includePricing} />
                         <Check name="includeDocuments" label={t.includeDocuments} defaultChecked={s.includeDocuments} />
                       </ActionForm>
-                      <ActionForm action={revokeShareAction} layout="inline" variant="danger" submitLabel={t.revoke} pendingLabel={dict.dev.projects.saving}>
+                      <ConfirmAction action={revokeShareAction} trigger={t.revoke} hint={t.revokeHint} confirmLabel={t.revoke} pendingLabel={dict.dev.projects.saving}>
                         {hidden}
                         <input type="hidden" name="shareId" value={s.id} />
-                      </ActionForm>
+                      </ConfirmAction>
                     </div>
                   )}
                 </li>

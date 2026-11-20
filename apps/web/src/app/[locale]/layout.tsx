@@ -17,7 +17,8 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   if (!isUiLocale(locale)) return {};
   const dict = await getDictionary(locale);
   return {
-    title: { default: dict.brand.name, template: `%s | ${dict.brand.name}` },
+    metadataBase: new URL(process.env.APP_URL ?? "http://localhost:3000"),
+    title: { default: dict.brand.name, template: `%s · ${dict.brand.name}` },
     description: dict.brand.tagline,
     robots: { index: false, follow: false }, // pre-launch
   };

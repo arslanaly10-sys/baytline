@@ -22,7 +22,7 @@ export async function demoRequestAction(_prev: FormState, fd: FormData): Promise
       consent: str(fd, "consent") === "yes",
     });
     if (r.ok) return { status: "success", message: t.sent };
-    return { status: "error", message: r.reason === "throttled" ? t.errors.throttled : t.errors[r.field] };
+    return r.reason === "throttled" ? { status: "error", message: t.errors.throttled } : { status: "error", message: t.errors[r.field], field: r.field };
   } catch (e) {
     console.error("[demo] request failed:", e instanceof Error ? e.message : "unknown");
     return { status: "error", message: t.errors.generic };

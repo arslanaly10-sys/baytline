@@ -18,7 +18,7 @@ export function Photo({ slug, alt, sizes, className = "", ratio = "4 / 3", prior
         loading={priority ? "eager" : "lazy"}
         decoding="async"
         style={p.focus ? { objectPosition: p.focus } : undefined}
-        className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover/photo:scale-[1.03] motion-reduce:transition-none motion-reduce:group-hover/photo:scale-100"
+        className="h-full w-full object-cover transition-transform duration-200 ease-out group-hover/photo:scale-[1.03] motion-reduce:transition-none motion-reduce:group-hover/photo:scale-100"
       />
     </div>
   );

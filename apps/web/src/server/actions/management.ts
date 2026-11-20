@@ -20,7 +20,7 @@ import {
 } from "@baytline/management";
 import type { FormState } from "@/lib/form-state";
 import { getDb } from "../db";
-import { localeAndDict, messageFor, requireActor, str } from "./helpers";
+import { localeAndDict, failed, requireActor, str } from "./helpers";
 
 // Pattern for every action: actor from the session cookie, org ID only a claim, permission and
 // org membership re-checked by @baytline/management, row-level security underneath.
@@ -41,7 +41,7 @@ async function run(fd: FormData, fn: (c: Ctx) => Promise<string>): Promise<FormS
     c.refresh();
     return { status: "success", message };
   } catch (e) {
-    return { status: "error", message: messageFor(e, c.dict.pm.errors) };
+    return failed(e, c.dict.pm.errors);
   }
 }
 
@@ -53,7 +53,7 @@ async function create(fd: FormData, fn: (c: Ctx) => Promise<string>): Promise<Fo
     target = await fn(c);
     c.refresh();
   } catch (e) {
-    return { status: "error", message: messageFor(e, c.dict.pm.errors) };
+    return failed(e, c.dict.pm.errors);
   }
   redirect(target);
 }

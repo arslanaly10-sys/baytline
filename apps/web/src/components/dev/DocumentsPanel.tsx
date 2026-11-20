@@ -5,6 +5,7 @@ import { format } from "@/i18n/format";
 import { addDocumentAction, archiveDocumentAction, updateDocumentAction } from "@/server/actions/developer";
 import { Chip } from "@/components/ui/Chip";
 import { ActionForm } from "@/components/forms/ActionForm";
+import { ConfirmAction } from "@/components/forms/ConfirmAction";
 import { Field, SelectField } from "@/components/forms/Field";
 
 type Props = {
@@ -79,10 +80,10 @@ export function DocumentsPanel({ dict, locale, orgId, docs, canManage, project, 
                       <input type="hidden" name="documentId" value={d.id} />
                       <DocFields dict={dict} doc={d} />
                     </ActionForm>
-                    <ActionForm action={archiveDocumentAction} variant="danger" submitLabel={t.archive} pendingLabel={dict.dev.projects.saving}>
+                    <ConfirmAction action={archiveDocumentAction} trigger={t.archive} hint={t.archiveHint} confirmLabel={t.archive} pendingLabel={dict.dev.projects.saving}>
                       {hidden}
                       <input type="hidden" name="documentId" value={d.id} />
-                    </ActionForm>
+                    </ConfirmAction>
                   </div>
                 </details>
               )}

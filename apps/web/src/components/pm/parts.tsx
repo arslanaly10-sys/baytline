@@ -31,8 +31,14 @@ export function Panel({ title, children, id }: { title: string; children: React.
   );
 }
 
-export function Empty({ children }: { children: React.ReactNode }) {
-  return <p className="rounded-panel border-2 border-dashed border-line px-6 py-10 text-center text-ink-muted">{children}</p>;
+/** Empty list with one next action (usually the add form further down the page), when the role can take it. */
+export function Empty({ children, action }: { children: React.ReactNode; action?: { href: string; label: string } }) {
+  return (
+    <div className="rounded-panel border-2 border-dashed border-line px-6 py-10 text-center">
+      <p className="text-ink-muted">{children}</p>
+      {action && <a href={action.href} className="mt-4 inline-block rounded-control bg-gulf px-4 py-2 text-sm font-medium text-gulf-ink hover:bg-gulf-strong">{action.label}</a>}
+    </div>
+  );
 }
 
 export function Facts({ items }: { items: [string, React.ReactNode][] }) {

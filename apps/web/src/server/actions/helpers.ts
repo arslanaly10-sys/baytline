@@ -29,6 +29,13 @@ export async function requireActor(locale: UiLocale, orgId: string): Promise<Act
 
 type ErrorMessages = Record<string, string> & { generic: string };
 
+/** Error result for <ActionForm>: the translated message plus the field it's about, so the form can mark and focus it. */
+export function failed(e: unknown, messages: ErrorMessages): { status: "error"; message: string; field?: string } {
+  const message = messageFor(e, messages);
+  const field = e instanceof IdentityError && e.code === "invalid_input" && e.detail ? e.detail : undefined;
+  return field ? { status: "error", message, field } : { status: "error", message };
+}
+
 /** Maps service errors to a translated message. Unexpected errors are logged without user data. */
 export function messageFor(e: unknown, messages: ErrorMessages): string {
   if (e instanceof IdentityError) {
