@@ -32,7 +32,7 @@ import {
 
 let db: Db;
 const PW = "a long test passphrase";
-type A = { userId: string; orgId: string };
+type A = { userId: string; orgId: string; mfa?: boolean };
 const u = {} as Record<"ops" | "admin" | "leasing" | "maint" | "fin" | "otherPm" | "dev", A>;
 const f = {} as { prop: string; unit1: string; unit2: string; lease: string; tenant: string; request: string; wo: string; otherProp: string; otherUnit: string };
 
@@ -57,7 +57,7 @@ const UNIT = { code: "A-101", unitType: "apartment", bedrooms: "2", areaSqm: "11
 beforeAll(async () => {
   db = createDb();
   const boot = await createBootstrapInvitation(process.env.DATABASE_OWNER_URL!, { email: "ops@example.test" });
-  u.ops = await join(boot.token, "Ops", boot.orgId);
+  u.ops = { ...(await join(boot.token, "Ops", boot.orgId)), mfa: true } as A;
   const pm = await createOrganization(db, u.ops, { type: "property_manager", name: "Manager A", market: "SA", adminEmail: "pm-admin@example.test" });
   u.admin = await join(pm.token, "PM admin", pm.orgId);
   for (const [k, role] of [["leasing", "pm_leasing_manager"], ["maint", "pm_maintenance_coordinator"], ["fin", "pm_finance"]] as const) {

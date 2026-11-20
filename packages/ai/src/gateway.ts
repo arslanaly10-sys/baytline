@@ -3,7 +3,7 @@ import { withAppTx, type Client, type Db } from "@baytline/db";
 import { IdentityError, requireContext, writeAudit, type Actor } from "@baytline/identity";
 import { prepareGrounding, GROUNDING_RULES, type GroundedFact, type GroundingRef, type RejectedFact } from "./grounding";
 import { costMicro, estimateCostMicro, isModelId, type ModelId } from "./models";
-import { capabilitiesFor, levelFor, orgSpendMtd, providerSwitchedOn, readOrgPolicy, readPlatformSettings, READY_CONNECTORS } from "./policy";
+import { capabilitiesFor, levelFor, orgSpendMtd, providerSwitchedOn, readOrgPolicy, readPlatformSettings, readyDependencies } from "./policy";
 import { providerFromEnv, ProviderError, type AiProvider } from "./provider";
 import { redact, type Redacted } from "./redact";
 
@@ -91,7 +91,8 @@ async function plan(c: Client, actor: Actor, task: AiTask, provider: AiProvider 
   if (!policy.enabled) return fail("org_disabled");
   const autonomy = levelFor(policy, capability);
   if (autonomy === "off") return fail("capability_off");
-  if (capability.needs.some((d) => !READY_CONNECTORS.has(d))) return fail("dependency_unavailable", autonomy);
+  const ready = await readyDependencies(c);
+  if (capability.needs.some((d) => !ready.has(d))) return fail("dependency_unavailable", autonomy);
   const allowed = policy.allowedModels.filter((m) => platform.allowedModels.includes(m));
   const requested = task.model ?? policy.defaultModel ?? allowed[0];
   if (!isModelId(requested) || !allowed.includes(requested)) return fail("model_not_allowed", autonomy, requested ?? null);

@@ -1,6 +1,6 @@
 /**
- * Email delivery seam. No provider is integrated yet, and nothing pretends one is:
- *  - MAIL_PROVIDER set to anything: startup error (not implemented yet).
+ * Email delivery seam. The real connector (SMTP) lives in @baytline/platform (connectors/email.ts);
+ * the app picks it when MAIL_SMTP_URL is set. Otherwise:
  *  - MAIL_DEV_OUTBOX=console outside production: messages are printed to the
  *    server log, clearly marked as not delivered. Local development only.
  *  - otherwise: not configured, and callers must tell the user.
@@ -9,7 +9,7 @@ export type OutgoingMail = { to: string; subject: string; text: string };
 
 export interface Mailer {
   readonly configured: boolean;
-  readonly kind: "none" | "dev-console";
+  readonly kind: "none" | "dev-console" | "smtp";
   send(mail: OutgoingMail): Promise<void>;
 }
 
@@ -30,7 +30,6 @@ const devConsole: Mailer = {
 };
 
 export function mailerFromEnv(env: NodeJS.ProcessEnv = process.env): Mailer {
-  if (env.MAIL_PROVIDER) throw new Error(`MAIL_PROVIDER=${env.MAIL_PROVIDER} is not supported yet. Unset it.`);
   if (env.MAIL_DEV_OUTBOX === "console" && env.NODE_ENV !== "production") return devConsole;
   return none;
 }

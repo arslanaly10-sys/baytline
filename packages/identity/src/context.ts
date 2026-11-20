@@ -3,7 +3,11 @@ import { isUuid, withAppTx, type Client, type Db } from "@baytline/db";
 import { IdentityError } from "./errors";
 
 /** Who is acting and in which organization. Roles are never taken from the caller. */
-export type Actor = { userId: string; orgId: string };
+/**
+ * Who is acting, and in which organization. `mfa` is true when the session passed a second factor;
+ * it comes from the session, never from a form. Platform workspaces require it (here and in SQL).
+ */
+export type Actor = { userId: string; orgId: string; mfa?: boolean };
 
 export type OrgSummary = {
   id: string;
@@ -55,6 +59,7 @@ export async function requireContext(c: Client, actor: Actor): Promise<OrgContex
   const memberships = await loadMyMemberships(c);
   const org = memberships.find((m) => m.id === actor.orgId);
   if (!org) throw new IdentityError("not_found");
+  if (org.type === "platform" && actor.mfa !== true) throw new IdentityError("forbidden", "mfa_required");
   return { org, memberships, principal: principalFrom(actor.userId, memberships, actor.orgId) };
 }
 

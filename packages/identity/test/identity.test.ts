@@ -24,6 +24,7 @@ import {
   type OutgoingMail,
 } from "../src";
 import { createBootstrapInvitation } from "../src/bootstrap";
+import { confirmMfaEnrollment, currentStep, disableMfa, getMfaStatus, resetUserMfa, startMfaEnrollment, totp, verifyMfa } from "../src";
 
 let db: Db;
 const PW = "a long test passphrase";
@@ -39,10 +40,10 @@ const code = async (p: Promise<unknown>) => {
 
 /** Raw SQL as the app role with RLS settings, bypassing the service layer. */
 const rawApp = <T>(userId: string, orgId: string | null, sql: string, args: unknown[] = []) =>
-  withAppTx(db, { userId, orgId }, async (c) => (await c.query(sql, args)).rows as T[]);
+  withAppTx(db, { userId, orgId, mfa: orgId === f.platformOrg }, async (c) => (await c.query(sql, args)).rows as T[]);
 
 // Shared fixtures, built up in order by the first describe block.
-const f = {} as {
+const f = {} as { mfaUser: string; mfaSecret: string; mfaRecovery: string[];
   platformOrg: string;
   opsId: string;
   devOrg: string;
@@ -114,7 +115,7 @@ describe("operator bootstrap and organization onboarding", () => {
   });
 
   it("lets the platform admin create a developer org and invite its first admin", async () => {
-    const r = await createOrganization(db, { userId: f.opsId, orgId: f.platformOrg }, { type: "developer", name: "Test Developer", market: "SA", adminEmail: "devadmin@example.test" });
+    const r = await createOrganization(db, { userId: f.opsId, orgId: f.platformOrg, mfa: true }, { type: "developer", name: "Test Developer", market: "SA", adminEmail: "devadmin@example.test" });
     f.devOrg = r.orgId;
     const s = await signUpFromInvitation(db, { token: r.token, password: PW, displayName: "Dev admin", locale: "ar" });
     f.devAdminId = s.userId;
@@ -138,7 +139,7 @@ describe("operator bootstrap and organization onboarding", () => {
   });
 
   it("creates a brokerage for isolation tests", async () => {
-    const r = await createOrganization(db, { userId: f.opsId, orgId: f.platformOrg }, { type: "brokerage", name: "Test Brokerage", market: "AE", adminEmail: "brkadmin@example.test" });
+    const r = await createOrganization(db, { userId: f.opsId, orgId: f.platformOrg, mfa: true }, { type: "brokerage", name: "Test Brokerage", market: "AE", adminEmail: "brkadmin@example.test" });
     f.brkOrg = r.orgId;
     f.brkAdminId = (await signUpFromInvitation(db, { token: r.token, password: PW, displayName: "Brk admin", locale: "en" })).userId;
   });
@@ -223,7 +224,7 @@ describe("no self-escalation", () => {
   });
 
   it("keeps at least one administrator", async () => {
-    const ops = { userId: f.opsId, orgId: f.platformOrg };
+    const ops = { userId: f.opsId, orgId: f.platformOrg, mfa: true };
     expect(await code(updateMembership(db, ops, f.devAdminMembership, { role: "developer_finance" }))).toBe("last_admin");
     expect(await code(updateMembership(db, ops, f.devAdminMembership, { status: "removed" }))).toBe("last_admin");
   });
@@ -258,7 +259,7 @@ describe("audit history", () => {
   });
 
   it("shows platform audit roles everything, including sign-in outcomes", async () => {
-    const { scope, rows } = await listAuditEvents(db, { userId: f.opsId, orgId: f.platformOrg }, { limit: 200 });
+    const { scope, rows } = await listAuditEvents(db, { userId: f.opsId, orgId: f.platformOrg, mfa: true }, { limit: 200 });
     expect(scope).toBe("platform");
     const types = new Set(rows.map((r) => r.eventType));
     for (const t of ["auth.sign_up", "auth.sign_in.failed", "auth.sign_in.throttled", "auth.sign_out", "org.created"]) expect(types).toContain(t);
@@ -303,3 +304,100 @@ describe("account recovery", () => {
     expect(await code(resetPassword(db, { token, password: "another passphrase!" }))).toBe("invalid_input:token_invalid");
   });
 });
+
+describe("multi-factor authentication", () => {
+  const code6 = (secret: string, offset = 0) => totp(secret, currentStep() + offset);
+
+  it("enrols with a first code, returns one-time recovery codes and stores the secret encrypted", async () => {
+    const s = await signUpCustomer(db, { email: "mfa-user@example.test", password: PW, displayName: "MFA user", locale: "en" });
+    const session = await signIn(db, { email: "mfa-user@example.test", password: PW });
+    if (!session.ok) throw new Error("sign-in failed");
+    expect(session.mfaRequired).toBe(false);
+    const v0 = (await validateSession(db, session.session.token))!;
+    expect(v0).toMatchObject({ mfaEnrolled: false, mfaVerified: false, mfaPending: false });
+
+    const start = await startMfaEnrollment(db, { id: s.userId, email: "mfa-user@example.test" });
+    expect(start.otpauthUri).toMatch(/^otpauth:\/\/totp\/Baytline%3Amfa-user%40example\.test\?secret=[A-Z2-7]+&issuer=Baytline/);
+    const stored = await withAuthTxRaw("select secret_encrypted from auth.mfa_factors where user_id = $1", [s.userId]);
+    expect(stored[0]!.secret_encrypted).toMatch(/^v1\./);
+    expect(stored[0]!.secret_encrypted).not.toContain(start.secret);
+
+    expect(await code(confirmMfaEnrollment(db, s.userId, v0.sessionId, "000000"))).toBe("invalid_input:code");
+    const recovery = await confirmMfaEnrollment(db, s.userId, v0.sessionId, code6(start.secret));
+    expect(recovery).toHaveLength(10);
+    expect(recovery[0]).toMatch(/^[a-z2-7]{5}-[a-z2-7]{5}$/);
+    // The enrolling session counts as verified.
+    expect((await validateSession(db, session.session.token))!).toMatchObject({ mfaEnrolled: true, mfaVerified: true, mfaPending: false });
+    expect(await code(startMfaEnrollment(db, { id: s.userId, email: "mfa-user@example.test" }))).toBe("conflict:mfa_already_enrolled");
+    f.mfaUser = s.userId;
+    f.mfaSecret = start.secret;
+    f.mfaRecovery = recovery;
+  });
+
+  it("holds a new sign-in until the second factor passes, refuses replayed codes, and spends recovery codes once", async () => {
+    const r = await signIn(db, { email: "mfa-user@example.test", password: PW });
+    if (!r.ok) throw new Error("sign-in failed");
+    expect(r.mfaRequired).toBe(true);
+    expect((await validateSession(db, r.session.token))!).toMatchObject({ mfaPending: true, mfaVerified: false });
+    // The code used at enrolment (same time step) can't be used again.
+    expect(await verifyMfa(db, r.session.token, code6(f.mfaSecret))).toEqual({ ok: false, reason: "invalid" });
+    const next = code6(f.mfaSecret, 1); // the next step is inside the drift window
+    expect(await verifyMfa(db, r.session.token, next)).toMatchObject({ ok: true, method: "totp" });
+    expect((await validateSession(db, r.session.token))!).toMatchObject({ mfaPending: false, mfaVerified: true });
+
+    const r2 = await signIn(db, { email: "mfa-user@example.test", password: PW });
+    if (!r2.ok) throw new Error("sign-in failed");
+    expect(await verifyMfa(db, r2.session.token, next)).toEqual({ ok: false, reason: "invalid" }); // replay
+    expect(await verifyMfa(db, r2.session.token, f.mfaRecovery[0]!.toUpperCase())).toMatchObject({ ok: true, method: "recovery", recoveryCodesLeft: 9 });
+    const r3 = await signIn(db, { email: "mfa-user@example.test", password: PW });
+    if (!r3.ok) throw new Error("sign-in failed");
+    expect(await verifyMfa(db, r3.session.token, f.mfaRecovery[0]!)).toEqual({ ok: false, reason: "invalid" }); // used already
+    expect((await getMfaStatus(db, f.mfaUser)).recoveryCodesLeft).toBe(9);
+  });
+
+  it("pauses after five wrong codes", async () => {
+    await withAuthTxRaw("delete from auth.mfa_attempts where user_id = $1", [f.mfaUser]); // earlier tests' failures count too
+    const r = await signIn(db, { email: "mfa-user@example.test", password: PW });
+    if (!r.ok) throw new Error("sign-in failed");
+    for (let i = 0; i < 4; i++) expect(await verifyMfa(db, r.session.token, "123456")).toEqual({ ok: false, reason: "invalid" });
+    expect((await verifyMfa(db, r.session.token, "123456")).ok).toBe(false);
+    expect(await verifyMfa(db, r.session.token, code6(f.mfaSecret, -1))).toEqual({ ok: false, reason: "throttled" });
+    await withAuthTxRaw("delete from auth.mfa_attempts where user_id = $1", [f.mfaUser]);
+  });
+
+  it("lets a user turn MFA off with a code, but never platform staff, and lets a platform admin reset someone else", async () => {
+    // Platform staff must keep MFA.
+    const opsStart = await startMfaEnrollment(db, { id: f.opsId, email: "ops@example.test" });
+    const opsSession = await signIn(db, { email: "ops@example.test", password: PW });
+    if (!opsSession.ok) throw new Error("sign-in failed");
+    const ov = (await validateSession(db, opsSession.session.token))!;
+    await confirmMfaEnrollment(db, f.opsId, ov.sessionId, code6(opsStart.secret));
+    expect(await code(disableMfa(db, f.opsId, code6(opsStart.secret, 1)))).toBe("forbidden:mfa_required_for_platform");
+    // A platform admin resets another user's MFA: their sessions end.
+    const ops = { userId: f.opsId, orgId: f.platformOrg, mfa: true };
+    expect(await code(resetUserMfa(db, { ...ops, mfa: false }, f.mfaUser))).toBe("forbidden:mfa_required");
+    expect(await code(resetUserMfa(db, ops, f.opsId))).toBe("invalid_input:own_mfa");
+    const live = await signIn(db, { email: "mfa-user@example.test", password: PW });
+    if (!live.ok) throw new Error("sign-in failed");
+    await resetUserMfa(db, ops, f.mfaUser);
+    expect(await validateSession(db, live.session.token)).toBeNull();
+    expect((await getMfaStatus(db, f.mfaUser)).enrolled).toBe(false);
+    // Re-enrol and turn it off with a code.
+    const again = await startMfaEnrollment(db, { id: f.mfaUser, email: "mfa-user@example.test" });
+    const s2 = await signIn(db, { email: "mfa-user@example.test", password: PW });
+    if (!s2.ok) throw new Error("sign-in failed");
+    await confirmMfaEnrollment(db, f.mfaUser, (await validateSession(db, s2.session.token))!.sessionId, code6(again.secret));
+    expect(await code(disableMfa(db, f.mfaUser, "000000"))).toBe("invalid_input:code");
+    await disableMfa(db, f.mfaUser, code6(again.secret, 1));
+    expect((await getMfaStatus(db, f.mfaUser)).enrolled).toBe(false);
+  });
+
+  it("refuses enrolment in production without an MFA key", async () => {
+    expect(await code(startMfaEnrollment(db, { id: f.mfaUser, email: "mfa-user@example.test" }, { NODE_ENV: "production" } as NodeJS.ProcessEnv))).toBe("invalid_input:mfa_unavailable");
+  });
+});
+
+async function withAuthTxRaw(sql: string, args: unknown[]) {
+  const { withAuthTx } = await import("@baytline/db");
+  return withAuthTx(db, async (c) => (await c.query(sql, args)).rows);
+}

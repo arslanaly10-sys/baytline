@@ -44,11 +44,33 @@ export const RULE_CATEGORIES = [
 ] as const;
 export type RuleCategory = (typeof RULE_CATEGORIES)[number];
 
+/** A rule's approved value. Stored as entered and approved; the platform never computes these. */
+export type RuleValue = {
+  summary: string;
+  summaryAr: string | null;
+  ratePercent: string | null;
+  fixedAmountMinor: string | null;
+  currency: string | null;
+  payer: RulePayer | null;
+};
+export const RULE_PAYERS = ["buyer", "seller", "split", "tenant", "landlord", "developer", "broker", "not_applicable"] as const;
+export type RulePayer = (typeof RULE_PAYERS)[number];
+
+export type RuleChange = {
+  id: string; status: "pending" | "approved" | "rejected" | "withdrawn" | "superseded"; value: RuleValue; sourceReference: string; effectiveFrom: string;
+  proposedBy: string; proposedByName: string | null; proposedAt: Date; decidedByName: string | null; decidedAt: Date | null; decisionNote: string | null;
+};
+
 export type MarketRule = {
   category: RuleCategory;
   status: "needs_setup" | "configured";
+  value: RuleValue | null;
   sourceReference: string | null;
   effectiveFrom: string | null;
+  updatedAt: Date | null;
+  updatedByName: string | null;
+  pending: RuleChange | null;
+  history: RuleChange[];
 };
 
 const CURRENCIES = new Set(Intl.supportedValuesOf("currency"));
@@ -94,6 +116,18 @@ export async function listMarkets(db: Db, userId: string): Promise<MarketConfig[
   return withAppTx(db, { userId }, async (c) => (await c.query(`${SELECT} order by k.code`)).rows.map(mapRow));
 }
 
+function mapValue(v: any): RuleValue | null {
+  if (!v) return null;
+  return { summary: v.summary, summaryAr: v.summary_ar ?? null, ratePercent: v.rate_percent ?? null, fixedAmountMinor: v.fixed_amount_minor ?? null, currency: v.currency ?? null, payer: v.payer ?? null };
+}
+
+function mapChange(r: Record<string, any>): RuleChange {
+  return {
+    id: r.id, status: r.status, value: mapValue(r.value)!, sourceReference: r.source_reference, effectiveFrom: r.effective_from, proposedBy: r.proposed_by,
+    proposedByName: r.proposed_name, proposedAt: r.proposed_at, decidedByName: r.decided_name, decidedAt: r.decided_at, decisionNote: r.decision_note,
+  };
+}
+
 export async function getMarketDetail(db: Db, actor: Actor, code: string): Promise<{ market: MarketConfig; rules: MarketRule[] }> {
   if (!isMarketCode(code)) throw new IdentityError("not_found");
   return withAppTx(db, actor, async (c) => {
@@ -101,13 +135,112 @@ export async function getMarketDetail(db: Db, actor: Actor, code: string): Promi
     const { rows } = await c.query(`${SELECT} where k.code = $1`, [code]);
     if (!rows[0]) throw new IdentityError("not_found");
     const { rows: rules } = await c.query(
-      "select category, status, source_reference, effective_from::text from app.market_rules where market = $1 order by category",
+      `select r.category, r.status, r.value, r.source_reference, r.effective_from::text, r.updated_at, u.display_name
+         from app.market_rules r left join app.users u on u.id = r.updated_by where r.market = $1 order by r.category`,
+      [code],
+    );
+    const { rows: changes } = await c.query(
+      `select ch.*, ch.effective_from::text as effective_from, pu.display_name as proposed_name, du.display_name as decided_name
+         from app.market_rule_changes ch left join app.users pu on pu.id = ch.proposed_by left join app.users du on du.id = ch.decided_by
+        where ch.market = $1 order by ch.proposed_at desc`,
       [code],
     );
     return {
       market: mapRow(rows[0]),
-      rules: rules.map((r) => ({ category: r.category, status: r.status, sourceReference: r.source_reference, effectiveFrom: r.effective_from })),
+      rules: rules.map((r) => {
+        const mine = changes.filter((ch) => ch.category === r.category).map(mapChange);
+        return {
+          category: r.category, status: r.status, value: mapValue(r.value), sourceReference: r.source_reference, effectiveFrom: r.effective_from,
+          updatedAt: r.updated_at, updatedByName: r.display_name, pending: mine.find((x) => x.status === "pending") ?? null, history: mine.filter((x) => x.status !== "pending"),
+        };
+      }),
     };
+  });
+}
+
+export type RuleProposalInput = {
+  summary: unknown; summaryAr?: unknown; ratePercent?: unknown; fixedAmount?: unknown; payer?: unknown; sourceReference: unknown; effectiveFrom: unknown;
+};
+
+/**
+ * Proposes a rule or fee for a market. It changes nothing until a different platform person approves it.
+ * Amounts are in the market's currency, entered as written in the source; nothing is calculated.
+ */
+export async function proposeMarketRule(db: Db, actor: Actor, code: string, category: string, input: RuleProposalInput): Promise<string> {
+  if (!isMarketCode(code) || !(RULE_CATEGORIES as readonly string[]).includes(category)) throw new IdentityError("not_found");
+  const summary = text(input.summary, 500, "summary");
+  const summaryAr = typeof input.summaryAr === "string" && input.summaryAr.trim() ? text(input.summaryAr, 500, "summary_ar") : null;
+  const rate = typeof input.ratePercent === "string" && input.ratePercent.trim() ? input.ratePercent.trim() : null;
+  if (rate !== null && (!/^\d{1,3}(\.\d{1,3})?$/.test(rate) || Number(rate) > 100)) throw new IdentityError("invalid_input", "rate_percent");
+  const payer = typeof input.payer === "string" && input.payer ? input.payer : null;
+  if (payer !== null && !(RULE_PAYERS as readonly string[]).includes(payer)) throw new IdentityError("invalid_input", "payer");
+  const source = text(input.sourceReference, 500, "source_reference");
+  if (source.length < 3) throw new IdentityError("invalid_input", "source_reference");
+  const effective = typeof input.effectiveFrom === "string" && /^\d{4}-\d{2}-\d{2}$/.test(input.effectiveFrom) && !Number.isNaN(Date.parse(input.effectiveFrom)) ? input.effectiveFrom : null;
+  if (!effective) throw new IdentityError("invalid_input", "effective_from");
+  return withAppTx(db, actor, async (c) => {
+    await requirePlatform(c, actor, "platform.market_rules.propose");
+    const { rows: m } = await c.query<{ currency: string }>("select currency from app.markets where code = $1", [code]);
+    const currency = m[0]!.currency;
+    let fixed: string | null = null;
+    if (typeof input.fixedAmount === "string" && input.fixedAmount.trim()) {
+      const digits = currencyDigits(currency);
+      const v = input.fixedAmount.trim().replace(/[,\s]/g, "");
+      const parts = v.match(/^(\d{1,13})(?:\.(\d+))?$/);
+      if (!parts || (parts[2] && parts[2].length > digits)) throw new IdentityError("invalid_input", "fixed_amount");
+      fixed = (BigInt(parts[1]!) * 10n ** BigInt(digits) + BigInt((parts[2] ?? "").padEnd(digits, "0") || "0")).toString();
+    }
+    const value = { summary, summary_ar: summaryAr, rate_percent: rate, fixed_amount_minor: fixed, currency: fixed ? currency : null, payer };
+    try {
+      await c.query("savepoint s");
+      const { rows } = await c.query<{ id: string }>("select app.propose_market_rule($1, $2, $3, $4, $5) as id", [code, category, JSON.stringify(value), source, effective]);
+      await writeAudit(c, { type: "market_rule.proposed", outcome: "success", actorUserId: actor.userId, orgId: actor.orgId, target: { type: "market_rule", id: `${code}:${category}` }, metadata: { change: rows[0]!.id } });
+      return rows[0]!.id;
+    } catch (e) {
+      const msg = (e as { message?: string }).message;
+      await c.query("rollback to savepoint s");
+      if (msg === "pending_exists") throw new IdentityError("conflict", "pending_exists");
+      throw e;
+    }
+  });
+}
+
+/** A different platform administrator or compliance officer approves or rejects. Rejection needs a reason. */
+export async function decideMarketRule(db: Db, actor: Actor, changeId: string, decision: unknown, note?: unknown): Promise<void> {
+  if (!/^[0-9a-f-]{36}$/.test(changeId)) throw new IdentityError("not_found");
+  if (decision !== "approve" && decision !== "reject") throw new IdentityError("invalid_input", "decision");
+  const n = typeof note === "string" && note.trim() ? text(note, 500, "decision_note") : null;
+  if (decision === "reject" && !n) throw new IdentityError("invalid_input", "decision_note_required");
+  await withAppTx(db, actor, async (c) => {
+    await requirePlatform(c, actor, "platform.market_rules.approve");
+    try {
+      await c.query("savepoint s");
+      await c.query("select app.decide_market_rule($1, $2, $3)", [changeId, decision, n]);
+    } catch (e) {
+      const msg = (e as { message?: string }).message;
+      await c.query("rollback to savepoint s");
+      if (msg === "own_proposal") throw new IdentityError("forbidden", "own_proposal");
+      if (msg === "not_pending") throw new IdentityError("invalid_input", "not_pending");
+      if (msg === "not_found") throw new IdentityError("not_found");
+      throw e;
+    }
+    await writeAudit(c, { type: decision === "approve" ? "market_rule.approved" : "market_rule.rejected", outcome: "success", actorUserId: actor.userId, orgId: actor.orgId, target: { type: "market_rule_change", id: changeId } });
+  });
+}
+
+export async function withdrawMarketRule(db: Db, actor: Actor, changeId: string): Promise<void> {
+  if (!/^[0-9a-f-]{36}$/.test(changeId)) throw new IdentityError("not_found");
+  await withAppTx(db, actor, async (c) => {
+    await requirePlatform(c, actor, "platform.market_rules.propose");
+    try {
+      await c.query("savepoint s");
+      await c.query("select app.withdraw_market_rule($1)", [changeId]);
+    } catch (e) {
+      await c.query("rollback to savepoint s");
+      if ((e as { message?: string }).message === "not_pending") throw new IdentityError("invalid_input", "not_pending");
+      throw e;
+    }
+    await writeAudit(c, { type: "market_rule.withdrawn", outcome: "success", actorUserId: actor.userId, orgId: actor.orgId, target: { type: "market_rule_change", id: changeId } });
   });
 }
 

@@ -60,6 +60,6 @@ lines are listed.
 
 ## Enabling a map provider later
 
-The `maps_places` connector (milestone 11) needs an adapter and a `MAPS_API_KEY` stored as a secret.
+The `maps_places` connector (milestone 14) needs an adapter and a `MAPS_API_KEY` stored as a secret.
 When it exists, records it supplies will use `source_kind = 'provider'`, and map tiles can replace the
 schematic. Until then, nothing here calls an outside service.

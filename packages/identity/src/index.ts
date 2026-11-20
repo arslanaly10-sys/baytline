@@ -26,3 +26,4 @@ export { acceptInvitation, getTeam, inviteMember, revokeInvitation, updateMember
 export { CREATABLE_ORG_TYPES, createOrganization, type CreatableOrgType } from "./orgs";
 export { listAuditEvents, recordDenied, writeAudit, type AuditInput, type AuditQuery, type AuditRow } from "./audit";
 export * as fields from "./fields";
+export { getMfaStatus, startMfaEnrollment, confirmMfaEnrollment, verifyMfa, disableMfa, resetUserMfa, mfaAvailable, totp, currentStep, base32Decode, type MfaStatus, type MfaVerifyResult, type EnrollmentStart } from "./mfa";

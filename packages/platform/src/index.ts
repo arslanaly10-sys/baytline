@@ -2,8 +2,8 @@ export { searchOrganizations, getOrganizationProfile, updateOrganizationProfile,
 export type { OrgDirectoryRow, OrgProfile, OrgSearch, OrgStatus } from "./orgs";
 export { searchUsers, getUserProfile, setUserStatus, revokeUserSessions } from "./users";
 export type { UserDirectoryRow, UserMembership, UserProfile, UserSearch, UserStatus } from "./users";
-export { listMarkets, getMarketDetail, updateMarket, validateMarketInput, currencyDigits, RULE_CATEGORIES } from "./markets";
-export type { MarketConfig, MarketInput, MarketRule, RuleCategory } from "./markets";
+export { listMarkets, getMarketDetail, updateMarket, validateMarketInput, currencyDigits, RULE_CATEGORIES, RULE_PAYERS, proposeMarketRule, decideMarketRule, withdrawMarketRule } from "./markets";
+export type { MarketConfig, MarketInput, MarketRule, RuleCategory, RuleChange, RuleValue, RulePayer, RuleProposalInput } from "./markets";
 export { PROVIDERS } from "./integrations/catalog";
 export type { IntegrationKind } from "./integrations/catalog";
 export { deriveStatus, CHECK_FRESH_HOURS } from "./integrations/status";
@@ -14,3 +14,5 @@ export { submitDemoRequest, listDemoRequests, listDemoRequestsByStatus, setDemoR
 export type { DemoRequestInput, DemoRequestRow, DemoResult, DemoField, DemoOrgType, DemoStatus } from "./demo";
 export { listSourcesForReview, decideSource } from "./sources";
 export type { ReviewSource } from "./sources";
+export { checkEmail, smtpMailer, smtpUrl, EmailError, EMAIL_SECRETS } from "./connectors/email";
+export { checkStorage, documentStore, objectKey, storageClient, StorageError, STORAGE_SECRETS } from "./connectors/storage";

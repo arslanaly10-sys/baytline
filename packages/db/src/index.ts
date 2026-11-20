@@ -33,7 +33,8 @@ export function isUuid(v: unknown): v is string {
   return typeof v === "string" && UUID.test(v);
 }
 
-export type RlsContext = { userId: string | null; orgId?: string | null };
+/** mfa: the session passed a second factor. Platform access requires it (app.mfa_verified() in SQL). */
+export type RlsContext = { userId: string | null; orgId?: string | null; mfa?: boolean };
 
 /**
  * Runs fn in a transaction on the app pool with the RLS settings applied
@@ -45,9 +46,10 @@ export async function withAppTx<T>(db: Db, ctx: RlsContext, fn: (c: Client) => P
   const c = await db.app.connect();
   try {
     await c.query("begin");
-    await c.query("select set_config('app.user_id', $1, true), set_config('app.org_id', $2, true)", [
+    await c.query("select set_config('app.user_id', $1, true), set_config('app.org_id', $2, true), set_config('app.mfa', $3, true)", [
       ctx.userId ?? "",
       ctx.orgId ?? "",
+      ctx.mfa === true ? "on" : "off",
     ]);
     const result = await fn(c);
     await c.query("commit");

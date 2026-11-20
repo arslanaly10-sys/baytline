@@ -17,7 +17,7 @@ import {
 
 let db: Db;
 const PW = "a long test passphrase";
-type A = { userId: string; orgId: string };
+type A = { userId: string; orgId: string; mfa?: boolean };
 const u = {} as Record<"ops" | "support" | "devAdmin" | "inv" | "fin" | "sales" | "brk" | "brk2" | "pmAdmin" | "pmMaint" | "alice" | "bob" | "devB", A>;
 const f = {} as { project: string; unitA: string; unitB: string; unitDraft: string; unitHidden: string; sampleProject: string; pmUnit: string; pmUnit2: string };
 
@@ -43,8 +43,8 @@ const contact = { name: "Alice Sample", preferredContact: "email", consent: true
 beforeAll(async () => {
   db = createDb();
   const boot = await createBootstrapInvitation(process.env.DATABASE_OWNER_URL!, { email: "ops@example.test" });
-  u.ops = await join(boot.token, "Ops", boot.orgId);
-  u.support = await join((await inviteMember(db, u.ops, { email: "support@example.test", role: "platform_support" })).token, "Support", boot.orgId);
+  u.ops = { ...(await join(boot.token, "Ops", boot.orgId)), mfa: true } as A;
+  u.support = { ...(await join((await inviteMember(db, u.ops, { email: "support@example.test", role: "platform_support" })).token, "Support", boot.orgId)), mfa: true } as A;
 
   const dev = await createOrganization(db, u.ops, { type: "developer", name: "Developer A", market: "SA", adminEmail: "dev@example.test" });
   u.devAdmin = await join(dev.token, "Dev admin", dev.orgId);

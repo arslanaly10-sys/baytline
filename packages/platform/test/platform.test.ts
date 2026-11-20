@@ -10,7 +10,7 @@ import {
   signUpFromInvitation,
   validateSession,
 } from "@baytline/identity";
-import { decideSource, listSourcesForReview } from "../src";
+import { checkEmail, checkStorage, decideMarketRule, decideSource, documentStore, listSourcesForReview, objectKey, proposeMarketRule, smtpMailer, withdrawMarketRule } from "../src";
 import { createBootstrapInvitation } from "../../identity/src/bootstrap";
 import {
   deriveStatus,
@@ -36,8 +36,8 @@ import {
 let db: Db;
 const PW = "a long test passphrase";
 const f = {} as { plat: string; adminId: string; supportId: string; devOrg: string; devAdminId: string; devToken: string; personalOrg?: string };
-const admin = () => ({ userId: f.adminId, orgId: f.plat });
-const support = () => ({ userId: f.supportId, orgId: f.plat });
+const admin = () => ({ userId: f.adminId, orgId: f.plat, mfa: true });
+const support = () => ({ userId: f.supportId, orgId: f.plat, mfa: true });
 const devAdmin = () => ({ userId: f.devAdminId, orgId: f.devOrg });
 
 const code = async (p: Promise<unknown>) => {
@@ -49,7 +49,7 @@ const code = async (p: Promise<unknown>) => {
   }
 };
 const raw = <T>(userId: string, orgId: string, sql: string, args: unknown[] = []) =>
-  withAppTx(db, { userId, orgId }, async (c) => (await c.query(sql, args)).rows as T[]);
+  withAppTx(db, { userId, orgId, mfa: orgId === f.plat }, async (c) => (await c.query(sql, args)).rows as T[]);
 
 const MARKET_OK = {
   nameEn: "United Arab Emirates",
@@ -132,7 +132,8 @@ describe("integration registry", () => {
   it("shows email as development-only, never connected", async () => {
     const dev = { ...env, MAIL_DEV_OUTBOX: "console", NODE_ENV: "development" } as NodeJS.ProcessEnv;
     expect((await getIntegrationRegistry(db, admin(), dev)).find((r) => r.key === "email")!.status).toBe("development_only");
-    expect((await getIntegrationRegistry(db, admin(), env)).find((r) => r.key === "email")!.status).toBe("not_available");
+    // The SMTP adapter exists (milestone 11); without its secrets it's not configured, never connected.
+    expect((await getIntegrationRegistry(db, admin(), env)).find((r) => r.key === "email")!.status).toBe("not_configured");
   });
 
   it("lets support look but not change anything", async () => {
@@ -162,7 +163,7 @@ describe("integration registry", () => {
     const e = (await getIntegrationRegistry(db, admin(), { ...env, MAIL_DEV_OUTBOX: "console", NODE_ENV: "development" } as NodeJS.ProcessEnv)).find((r) => r.key === "email")!;
     // Disabled wins over the development stand-in.
     expect(e).toMatchObject({ enabled: false, notes: "Not in use yet" });
-    expect(e.status).toBe("not_available");
+    expect(e.status).toBe("disabled");
     await setIntegrationEnabled(db, admin(), "email", true);
   });
 });
@@ -337,5 +338,95 @@ describe("inventory source review", () => {
     await decideSource(db, admin(), src!.id, "approve");
     expect((await listSourcesForReview(db, admin(), { status: "authorized" }))[0]).toMatchObject({ authorization: "authorized" });
     expect(await code(listSourcesForReview(db, devAdmin()))).toBe("forbidden:platform.integrations.view");
+  });
+});
+
+describe("connectors", () => {
+  it("checks email by signing in to the server, never sending, and reports fixed reasons", async () => {
+    expect(await checkEmail({} as NodeJS.ProcessEnv)).toEqual({ ok: false, summary: "MAIL_SMTP_URL or MAIL_FROM is not set." });
+    expect((await checkEmail({ MAIL_SMTP_URL: "http://x", MAIL_FROM: "a@b.co" } as NodeJS.ProcessEnv)).summary).toMatch(/valid smtps/);
+    expect((await checkEmail({ MAIL_SMTP_URL: "smtp://u:p@mail.example.com:25", MAIL_FROM: "a@b.co", NODE_ENV: "production" } as NodeJS.ProcessEnv)).summary).toMatch(/valid smtps/);
+    let sent = 0;
+    const ok = { verify: async () => true, sendMail: async () => { sent++; return {}; } } as never;
+    expect(await checkEmail({ MAIL_SMTP_URL: "smtps://u:p@mail.example.com", MAIL_FROM: "a@b.co" } as NodeJS.ProcessEnv, ok)).toEqual({ ok: true, summary: "Signed in to the mail server. No message was sent." });
+    expect(sent).toBe(0);
+    const bad = { verify: async () => { throw Object.assign(new Error("535 5.7.8 user secret-user@x rejected"), { code: "EAUTH", responseCode: 535 }); } } as never;
+    const r = await checkEmail({ MAIL_SMTP_URL: "smtps://u:p@mail.example.com", MAIL_FROM: "a@b.co" } as NodeJS.ProcessEnv, bad);
+    expect(r).toEqual({ ok: false, summary: "The mail server rejected the user name or password." });
+    expect(JSON.stringify(r)).not.toContain("secret-user");
+    // Delivery through the same transport.
+    const mailer = smtpMailer({ MAIL_SMTP_URL: "smtps://u:p@mail.example.com", MAIL_FROM: "Baytline <no-reply@example.com>" } as NodeJS.ProcessEnv, ok);
+    await mailer.send({ to: "x@example.com", subject: "Hi", text: "Body" });
+    expect(sent).toBe(1);
+  });
+
+  it("checks storage with a read-only bucket request and keeps objects inside an organization's prefix", async () => {
+    expect((await checkStorage({} as NodeJS.ProcessEnv)).summary).toBe("A STORAGE_* secret is not set.");
+    const env = { STORAGE_BUCKET: "b", STORAGE_REGION: "me-central-1", STORAGE_ACCESS_KEY_ID: "k", STORAGE_SECRET_ACCESS_KEY: "s", STORAGE_ENDPOINT: "http://minio.local" } as NodeJS.ProcessEnv;
+    expect((await checkStorage(env)).summary).toBe("STORAGE_ENDPOINT must be an https:// address.");
+    const seen: string[] = [];
+    const client = { send: async (cmd: { constructor: { name: string } }) => { seen.push(cmd.constructor.name); return {}; } } as never;
+    expect(await checkStorage(env, { client, bucket: "b" })).toEqual({ ok: true, summary: "The bucket answered. Nothing was written." });
+    expect(seen).toEqual(["HeadBucketCommand"]);
+    const { S3ServiceException } = await import("@aws-sdk/client-s3");
+    const denied = { send: async () => { throw new S3ServiceException({ name: "AccessDenied", $fault: "client", $metadata: { httpStatusCode: 403 }, message: "secret detail" }); } } as never;
+    expect((await checkStorage(env, { client: denied, bucket: "b" })).summary).toMatch(/rejected the access key/);
+    const store = documentStore(env, { client, bucket: "b" });
+    await store.put(objectKey(f.devOrg, "documents", "brochure.pdf"), new Uint8Array([1]), "application/pdf");
+    expect(seen.at(-1)).toBe("PutObjectCommand");
+    expect(() => objectKey(f.devOrg, "..", "x")).toThrow();
+    expect(() => objectKey("not-an-org", "documents", "x")).toThrow();
+    expect(objectKey(f.devOrg, "documents", "a.pdf")).toBe(`orgs/${f.devOrg}/documents/a.pdf`);
+  });
+});
+
+describe("market rules through two-person approval", () => {
+  const proposal = { summary: "Transfer fee as published by the land department (test).", ratePercent: "4", fixedAmount: "580", payer: "buyer", sourceReference: "Test source document ref 1", effectiveFrom: "2026-01-01" };
+
+  it("changes nothing until a different platform person approves", async () => {
+    expect(await code(proposeMarketRule(db, support(), "SA", "property_transfer_fee", proposal))).toBe("forbidden:platform.market_rules.propose");
+    expect(await code(proposeMarketRule(db, admin(), "SA", "property_transfer_fee", { ...proposal, sourceReference: "" }))).toBe("invalid_input:source_reference");
+    expect(await code(proposeMarketRule(db, admin(), "SA", "property_transfer_fee", { ...proposal, ratePercent: "120" }))).toBe("invalid_input:rate_percent");
+    expect(await code(proposeMarketRule(db, admin(), "SA", "made_up", proposal))).toBe("not_found");
+    const id = await proposeMarketRule(db, admin(), "SA", "property_transfer_fee", proposal);
+    expect(await code(proposeMarketRule(db, admin(), "SA", "property_transfer_fee", proposal))).toBe("conflict:pending_exists");
+    let rule = (await getMarketDetail(db, admin(), "SA")).rules.find((r) => r.category === "property_transfer_fee")!;
+    expect(rule).toMatchObject({ status: "needs_setup", value: null, pending: { id, value: { ratePercent: "4", fixedAmountMinor: "58000", currency: "SAR", payer: "buyer" } } });
+    // The proposer can't approve their own proposal, in the service or in the database.
+    expect(await code(decideMarketRule(db, admin(), id, "approve"))).toBe("forbidden:own_proposal");
+    expect(await code(raw(f.adminId, f.plat, "select app.decide_market_rule($1, 'approve', null)", [id]))).toMatch(/own_proposal/);
+    // Support can't approve; a compliance officer can.
+    expect(await code(decideMarketRule(db, support(), id, "approve"))).toBe("forbidden:platform.market_rules.approve");
+    const inv = await inviteMember(db, admin(), { email: "compliance@example.test", role: "platform_compliance" });
+    const compliance = { userId: (await signUpFromInvitation(db, { token: inv.token, password: PW, displayName: "Compliance", locale: "en" })).userId, orgId: f.plat, mfa: true };
+    expect(await code(decideMarketRule(db, compliance, id, "reject"))).toBe("invalid_input:decision_note_required");
+    await decideMarketRule(db, compliance, id, "approve", "Checked against the source");
+    rule = (await getMarketDetail(db, admin(), "SA")).rules.find((r) => r.category === "property_transfer_fee")!;
+    expect(rule).toMatchObject({ status: "configured", sourceReference: "Test source document ref 1", effectiveFrom: "2026-01-01", updatedByName: "Compliance", pending: null });
+    expect(rule.history.map((h) => h.status)).toEqual(["approved"]);
+    // Direct writes stay impossible.
+    expect(await code(raw(f.adminId, f.plat, "update app.market_rules set status = 'needs_setup'"))).toMatch(/permission denied/);
+    expect(await code(raw(f.adminId, f.plat, "update app.market_rule_changes set status = 'approved'"))).toMatch(/permission denied/);
+
+    // A new approved proposal supersedes the old value; a withdrawn one changes nothing.
+    const second = await proposeMarketRule(db, compliance, "SA", "property_transfer_fee", { ...proposal, ratePercent: "5" }).catch((e) => e);
+    expect(second).toBeInstanceOf(IdentityError); // compliance may approve but not propose
+    const w = await proposeMarketRule(db, admin(), "SA", "property_transfer_fee", { ...proposal, ratePercent: "5" });
+    await withdrawMarketRule(db, admin(), w);
+    expect((await getMarketDetail(db, admin(), "SA")).rules.find((r) => r.category === "property_transfer_fee")!.value!.ratePercent).toBe("4");
+    const third = await proposeMarketRule(db, admin(), "SA", "property_transfer_fee", { ...proposal, ratePercent: "5" });
+    await decideMarketRule(db, compliance, third, "approve");
+    rule = (await getMarketDetail(db, admin(), "SA")).rules.find((r) => r.category === "property_transfer_fee")!;
+    expect(rule.value!.ratePercent).toBe("5");
+    expect(rule.history.map((h) => h.status)).toEqual(["approved", "withdrawn", "superseded"]);
+  });
+
+  it("refuses platform access without a verified second factor", async () => {
+    const noMfa = { userId: f.adminId, orgId: f.plat };
+    expect(await code(getMarketDetail(db, noMfa, "SA"))).toBe("forbidden:mfa_required");
+    expect(await code(proposeMarketRule(db, noMfa, "SA", "vat_treatment", proposal))).toBe("forbidden:mfa_required");
+    // And in the database: platform policies and functions see a non-MFA session as not staff.
+    const rows = await withAppTx(db, noMfa, async (c) => (await c.query("select app.is_platform_admin() as a, app.is_platform_staff() as s")).rows);
+    expect(rows).toEqual([{ a: false, s: false }]);
   });
 });

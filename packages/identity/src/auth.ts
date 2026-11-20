@@ -29,6 +29,12 @@ export type ValidSession = {
   user: SessionUser;
   lastOrgId: string | null;
   expiresAt: Date;
+  /** The user has confirmed MFA. */
+  mfaEnrolled: boolean;
+  /** This session passed the second factor. Platform access requires it. */
+  mfaVerified: boolean;
+  /** Password passed, second factor not yet: the session may only be used to finish signing in. */
+  mfaPending: boolean;
 };
 
 export type NewSession = { token: string; expiresAt: Date; userId: string };
@@ -114,7 +120,7 @@ export async function signUpFromInvitation(
   return { ...session, orgId };
 }
 
-export type SignInResult = { ok: true; session: NewSession } | { ok: false; reason: "invalid" | "throttled" };
+export type SignInResult = { ok: true; session: NewSession; mfaRequired: boolean } | { ok: false; reason: "invalid" | "throttled" };
 
 /**
  * Same response for unknown email, wrong password and disabled account.
@@ -166,8 +172,11 @@ export async function signIn(db: Db, input: { email: unknown; password: unknown 
       return { ok: false, reason: "invalid" } as const;
     }
     const session = await createSession(c, user.id);
-    await writeAudit(c, { type: "auth.sign_in.succeeded", outcome: "success", actorUserId: user.id, target: { type: "user", id: user.id } });
-    return { ok: true, session } as const;
+    // With MFA on, this session can only finish signing in until the second factor passes.
+    const { rowCount } = await c.query("select 1 from auth.mfa_factors where user_id = $1 and confirmed_at is not null", [user.id]);
+    const mfaRequired = Boolean(rowCount);
+    await writeAudit(c, { type: "auth.sign_in.succeeded", outcome: "success", actorUserId: user.id, target: { type: "user", id: user.id }, metadata: { mfa: mfaRequired ? "pending" : "not_enrolled" } });
+    return { ok: true, session, mfaRequired } as const;
   });
 }
 
@@ -176,9 +185,10 @@ export async function validateSession(db: Db, token: string | undefined): Promis
   const id = sha256(token);
   return withAuthTx(db, async (c) => {
     const { rows } = await c.query(
-      `select s.id, s.expires_at, s.last_org_id, u.id as user_id, u.email, u.display_name, u.locale,
-              u.is_placeholder, u.email_verified_at
+      `select s.id, s.expires_at, s.last_org_id, s.mfa_verified_at, u.id as user_id, u.email, u.display_name, u.locale,
+              u.is_placeholder, u.email_verified_at, (f.confirmed_at is not null) as mfa_enrolled
          from auth.sessions s join app.users u on u.id = s.user_id
+         left join auth.mfa_factors f on f.user_id = u.id
         where s.id = $1 and s.expires_at > now() and u.status = 'active'
           and s.last_seen_at > now() - make_interval(days => $2)`,
       [id, SESSION_IDLE_DAYS],
@@ -190,6 +200,9 @@ export async function validateSession(db: Db, token: string | undefined): Promis
       sessionId: id,
       lastOrgId: r.last_org_id,
       expiresAt: r.expires_at,
+      mfaEnrolled: r.mfa_enrolled,
+      mfaVerified: r.mfa_enrolled && r.mfa_verified_at !== null,
+      mfaPending: r.mfa_enrolled && r.mfa_verified_at === null,
       user: {
         id: r.user_id,
         email: r.email,

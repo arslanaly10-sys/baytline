@@ -1,5 +1,7 @@
 import type { Db } from "@baytline/db";
 import { providerFromEnv } from "@baytline/ai";
+import { checkEmail, EMAIL_SECRETS } from "../connectors/email";
+import { checkStorage, STORAGE_SECRETS } from "../connectors/storage";
 
 /**
  * Providers the platform knows about. Credentials are NEVER stored here or in the
@@ -59,14 +61,30 @@ export const PROVIDERS: readonly ProviderDef[] = [
     key: "email",
     kind: "messaging",
     milestone: 11,
-    secrets: ["MAIL_PROVIDER"],
-    // No real provider adapter exists yet. The console outbox is a development stand-in only.
-    adapterAvailable: false,
-    developmentOnly: (env) => env.MAIL_DEV_OUTBOX === "console" && env.NODE_ENV !== "production",
+    secrets: [...EMAIL_SECRETS],
+    // SMTP adapter (connectors/email.ts). The console outbox remains a development stand-in.
+    adapterAvailable: true,
+    developmentOnly: (env) => !env.MAIL_SMTP_URL && env.MAIL_DEV_OUTBOX === "console" && env.NODE_ENV !== "production",
+    async check() {
+      let r = { ok: false, summary: "" };
+      const latencyMs = await timed(async () => { r = await checkEmail(); });
+      return { ...r, latencyMs };
+    },
   },
-  { key: "whatsapp", kind: "messaging", milestone: 11, secrets: ["WHATSAPP_BUSINESS_TOKEN", "WHATSAPP_PHONE_NUMBER_ID"], adapterAvailable: false },
-  { key: "sms", kind: "messaging", milestone: 11, secrets: ["SMS_PROVIDER_KEY"], adapterAvailable: false },
-  { key: "document_storage", kind: "storage", milestone: 11, secrets: ["STORAGE_BUCKET", "STORAGE_ACCESS_KEY"], adapterAvailable: false },
+  { key: "whatsapp", kind: "messaging", milestone: 13, secrets: ["WHATSAPP_BUSINESS_TOKEN", "WHATSAPP_PHONE_NUMBER_ID"], adapterAvailable: false },
+  { key: "sms", kind: "messaging", milestone: 13, secrets: ["SMS_PROVIDER_KEY"], adapterAvailable: false },
+  {
+    key: "document_storage",
+    kind: "storage",
+    milestone: 11,
+    secrets: [...STORAGE_SECRETS],
+    adapterAvailable: true,
+    async check() {
+      let r = { ok: false, summary: "" };
+      const latencyMs = await timed(async () => { r = await checkStorage(); });
+      return { ...r, latencyMs };
+    },
+  },
   {
     key: "ai_gateway",
     kind: "ai",
@@ -84,7 +102,7 @@ export const PROVIDERS: readonly ProviderDef[] = [
   // Per-source feeds (milestone 9): each source names its own FEED_* secrets. Turning this off stops every feed sync.
   { key: "developer_feeds", kind: "data_feed", milestone: 9, secrets: [], adapterAvailable: true },
   { key: "ad_channels", kind: "advertising", milestone: 14, secrets: [], adapterAvailable: false },
-  { key: "maps_places", kind: "location", milestone: 11, secrets: ["MAPS_API_KEY"], adapterAvailable: false },
+  { key: "maps_places", kind: "location", milestone: 14, secrets: ["MAPS_API_KEY"], adapterAvailable: false },
 ];
 
 export function providerByKey(key: string): ProviderDef | undefined {

@@ -47,7 +47,7 @@ import {
 
 let db: Db;
 const PW = "a long test passphrase";
-type A = { userId: string; orgId: string };
+type A = { userId: string; orgId: string; mfa?: boolean };
 const u = {} as Record<"ops" | "devAdmin" | "inv" | "fin" | "sales" | "devB" | "brkX" | "brkY", A>;
 const f = {} as { project: string; phaseA: string; phaseOther: string; unit1: string; unit2: string; draftUnit: string; list: string; v1: string; plan: string; pv1: string; docInternal: string; docPartners: string; share: string; sampleProject: string };
 
@@ -60,7 +60,7 @@ const code = async (p: Promise<unknown>) => {
   }
 };
 const raw = <T = Record<string, unknown>>(a: A, sql: string, args: unknown[] = []) =>
-  withAppTx(db, { userId: a.userId, orgId: a.orgId }, async (c) => (await c.query(sql, args)).rows as T[]);
+  withAppTx(db, { userId: a.userId, orgId: a.orgId, mfa: (a as { mfa?: boolean }).mfa }, async (c) => (await c.query(sql, args)).rows as T[]);
 
 async function join(token: string, name: string, orgId: string): Promise<A> {
   return { userId: (await signUpFromInvitation(db, { token, password: PW, displayName: name, locale: "en" })).userId, orgId };
@@ -69,7 +69,7 @@ async function join(token: string, name: string, orgId: string): Promise<A> {
 beforeAll(async () => {
   db = createDb();
   const boot = await createBootstrapInvitation(process.env.DATABASE_OWNER_URL!, { email: "ops@example.test" });
-  u.ops = await join(boot.token, "Ops", boot.orgId);
+  u.ops = { ...(await join(boot.token, "Ops", boot.orgId)), mfa: true } as A;
   const dev = await createOrganization(db, u.ops, { type: "developer", name: "Developer A", market: "SA", adminEmail: "a-admin@example.test" });
   u.devAdmin = await join(dev.token, "A admin", dev.orgId);
   for (const [k, role, email] of [["inv", "developer_inventory_manager", "a-inv"], ["fin", "developer_finance", "a-fin"], ["sales", "developer_sales_manager", "a-sales"]] as const) {

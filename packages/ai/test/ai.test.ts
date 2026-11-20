@@ -1,4 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import pg from "pg";
 import { createDb, withAppTx, type Db } from "@baytline/db";
 import { createOrganization, IdentityError, inviteMember, signUpFromInvitation } from "@baytline/identity";
 import { ROLE_GRANTS } from "@baytline/core";
@@ -25,7 +26,7 @@ import {
 
 let db: Db;
 const PW = "a long test passphrase";
-type A = { userId: string; orgId: string };
+type A = { userId: string; orgId: string; mfa?: boolean };
 const u = {} as Record<"ops" | "support" | "admin" | "inv" | "other" | "brk", A>;
 const ENV = { AI_PROVIDER_API_KEY: "test-key-not-real" };
 
@@ -38,7 +39,7 @@ const code = async (p: Promise<unknown>) => {
   }
 };
 const raw = <T = Record<string, any>>(a: A, sql: string, args: unknown[] = []) =>
-  withAppTx(db, { userId: a.userId, orgId: a.orgId }, async (c) => (await c.query(sql, args)).rows as T[]);
+  withAppTx(db, { userId: a.userId, orgId: a.orgId, mfa: (a as { mfa?: boolean }).mfa }, async (c) => (await c.query(sql, args)).rows as T[]);
 async function join(token: string, name: string, orgId: string): Promise<A> {
   return { userId: (await signUpFromInvitation(db, { token, password: PW, displayName: name, locale: "en" })).userId, orgId };
 }
@@ -68,9 +69,9 @@ const FACTS: GroundedFact[] = [
 beforeAll(async () => {
   db = createDb();
   const boot = await createBootstrapInvitation(process.env.DATABASE_OWNER_URL!, { email: "ai-ops@example.test" });
-  u.ops = await join(boot.token, "AI ops", boot.orgId);
+  u.ops = { ...(await join(boot.token, "AI ops", boot.orgId)), mfa: true } as A;
   const sup = await inviteMember(db, u.ops, { email: "ai-support@example.test", role: "platform_support" });
-  u.support = await join(sup.token, "AI support", boot.orgId);
+  u.support = { ...(await join(sup.token, "AI support", boot.orgId)), mfa: true } as A;
   const dev = await createOrganization(db, u.ops, { type: "developer", name: "AI Dev", market: "AE", adminEmail: "ai-admin@example.test" });
   u.admin = await join(dev.token, "AI admin", dev.orgId);
   const inv = await inviteMember(db, u.admin, { email: "ai-inv@example.test", role: "developer_inventory_manager" });
@@ -156,6 +157,28 @@ describe("policies", () => {
     expect(v.blockers).toEqual(["platform_disabled"]);
     const audit = await raw(u.admin, "select metadata from app.audit_events where event_type = 'ai_policy.updated' order by occurred_at desc limit 1");
     expect(audit[0]!.metadata).toMatchObject({ enabled: "true", budget_usd: "20" });
+  });
+});
+
+describe("connector readiness", () => {
+  it("counts a connector as ready only after a recent successful check, and not when switched off", async () => {
+    const missing = async () => (await getOrgAiPolicy(db, u.admin, ENV)).capabilities.find((c) => c.id === "instant_reply")!.missing;
+    expect(await missing()).toEqual(["whatsapp", "web_chat", "sms", "email"]);
+    const owner = new pg.Client({ connectionString: process.env.DATABASE_OWNER_URL });
+    await owner.connect();
+    try {
+      await owner.query("insert into app.integration_checks (provider_key, checked_by, ok, summary, checked_at) values ('email', $1, false, 'failed', now())", [u.ops.userId]);
+      expect(await missing()).toContain("email"); // a failed check doesn't count
+      await owner.query("insert into app.integration_checks (provider_key, checked_by, ok, summary, checked_at) values ('email', $1, true, 'ok', now() - interval '25 hours')", [u.ops.userId]);
+      expect(await missing()).toContain("email"); // the latest check is the old one now... and too old anyway
+      await owner.query("insert into app.integration_checks (provider_key, checked_by, ok, summary, checked_at) values ('email', $1, true, 'ok', now())", [u.ops.userId]);
+      expect(await missing()).toEqual(["whatsapp", "web_chat", "sms"]);
+      await owner.query("insert into app.integration_settings (provider_key, enabled) values ('email', false) on conflict (provider_key) do update set enabled = false");
+      expect(await missing()).toContain("email");
+      await owner.query("update app.integration_settings set enabled = true where provider_key = 'email'");
+    } finally {
+      await owner.end();
+    }
   });
 });
 

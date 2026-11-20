@@ -4,7 +4,8 @@ export type IdentityErrorCode =
   | "invalid_input"
   | "conflict"
   | "last_admin"
-  | "not_configured";
+  | "not_configured"
+  | "rate_limited";
 
 export class IdentityError extends Error {
   constructor(

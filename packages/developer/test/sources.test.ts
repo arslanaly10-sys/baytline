@@ -37,7 +37,7 @@ import {
 
 let db: Db;
 const PW = "a long test passphrase";
-type A = { userId: string; orgId: string };
+type A = { userId: string; orgId: string; mfa?: boolean };
 const u = {} as Record<"ops" | "admin" | "inv" | "sales" | "fin" | "other" | "brk" | "brkAgent", A>;
 const f = {} as { project: string; project2: string; unit1: string; unit2: string; file: string; partner: string; feed: string };
 
@@ -50,7 +50,7 @@ const code = async (p: Promise<unknown>) => {
   }
 };
 const raw = <T = Record<string, any>>(a: A, sql: string, args: unknown[] = []) =>
-  withAppTx(db, { userId: a.userId, orgId: a.orgId }, async (c) => (await c.query(sql, args)).rows as T[]);
+  withAppTx(db, { userId: a.userId, orgId: a.orgId, mfa: (a as { mfa?: boolean }).mfa }, async (c) => (await c.query(sql, args)).rows as T[]);
 async function join(token: string, name: string, orgId: string): Promise<A> {
   return { userId: (await signUpFromInvitation(db, { token, password: PW, displayName: name, locale: "en" })).userId, orgId };
 }
@@ -59,7 +59,7 @@ const hours = (n: number) => new Date(Date.now() - n * 36e5).toISOString();
 beforeAll(async () => {
   db = createDb();
   const boot = await createBootstrapInvitation(process.env.DATABASE_OWNER_URL!, { email: "s-ops@example.test" });
-  u.ops = await join(boot.token, "S ops", boot.orgId);
+  u.ops = { ...(await join(boot.token, "S ops", boot.orgId)), mfa: true } as A;
   const dev = await createOrganization(db, u.ops, { type: "developer", name: "Source Dev", market: "AE", adminEmail: "s-admin@example.test" });
   u.admin = await join(dev.token, "S admin", dev.orgId);
   for (const [k, role] of [["inv", "developer_inventory_manager"], ["sales", "developer_sales_manager"], ["fin", "developer_finance"]] as const) {

@@ -72,8 +72,27 @@ export async function readOrgPolicy(c: Client, orgId: string, lock = false): Pro
   };
 }
 
-/** Connectors the AI could depend on. None besides the AI provider has an adapter yet (milestone 11). */
-export const READY_CONNECTORS: ReadonlySet<AiDependency> = new Set<AiDependency>(["ai_provider"]);
+/**
+ * Which platform connector each AI dependency needs. A dependency is ready only when that connector is
+ * switched on and its latest connection check succeeded within CONNECTOR_READY_HOURS (Integrations).
+ * The AI provider itself is checked by the gateway (key and switch). Dependencies with no connector
+ * (telephony, web chat) are never ready.
+ */
+export const CONNECTOR_FOR: Partial<Record<AiDependency, string>> = {
+  email: "email", document_storage: "document_storage", whatsapp: "whatsapp", sms: "sms", maps_places: "maps_places", ad_channels: "ad_channels",
+};
+export const CONNECTOR_READY_HOURS = 24;
+
+export async function readyDependencies(c: Client): Promise<Set<AiDependency>> {
+  const ready = new Set<AiDependency>(["ai_provider"]);
+  const entries = Object.entries(CONNECTOR_FOR) as [AiDependency, string][];
+  const { rows } = await c.query<{ key: string; ready: boolean }>(
+    "select k as key, app.connector_ready(k, $2) as ready from unnest($1::text[]) as k",
+    [entries.map(([, k]) => k), CONNECTOR_READY_HOURS],
+  );
+  for (const [dep, key] of entries) if (rows.find((r) => r.key === key)?.ready) ready.add(dep);
+  return ready;
+}
 
 export function capabilitiesFor(orgType: OrgType): AiCapability[] {
   const ws = workspaceForOrgType(orgType).id;
@@ -131,12 +150,12 @@ export async function getOrgAiPolicy(db: Db, actor: Actor, env: NodeJS.ProcessEn
   return withAppTx(db, actor, async (c) => {
     const ctx = await requireContext(c, actor);
     requireAiAdmin(ctx);
-    const [policy, platform, spend, on] = await Promise.all([readOrgPolicy(c, ctx.org.id), readPlatformSettings(c), orgSpendMtd(c, ctx.org.id), providerSwitchedOn(c)]);
+    const [policy, platform, spend, on, ready] = await Promise.all([readOrgPolicy(c, ctx.org.id), readPlatformSettings(c), orgSpendMtd(c, ctx.org.id), providerSwitchedOn(c), readyDependencies(c)]);
     const providerConfigured = Boolean(env[PROVIDER_SECRET]);
     const capabilities = capabilitiesFor(ctx.org.type).map((cap) => ({
       id: cap.id, category: cap.category, level: levelFor(policy, cap), maxAutonomy: cap.maxAutonomy, defaultAutonomy: cap.defaultAutonomy,
       levels: AUTONOMY_LEVELS.filter((l) => rank(l) <= rank(cap.maxAutonomy)), guardrails: cap.guardrails, needs: cap.needs,
-      missing: cap.needs.filter((d) => !READY_CONNECTORS.has(d)), bindingSteps: cap.leadsTo, milestone: cap.milestone,
+      missing: cap.needs.filter((d) => !ready.has(d)), bindingSteps: cap.leadsTo, milestone: cap.milestone,
     }));
     const blockers = [
       !platform.enabled && "platform_disabled",

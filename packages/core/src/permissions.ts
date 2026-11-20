@@ -99,6 +99,9 @@ export const PERMISSIONS = {
   "platform.markets.configure": { effect: "consequential" },
   "platform.sources.manage": { effect: "write" },
   "platform.ai_policy.manage": { effect: "consequential" },
+  // Market rules and fees: one person proposes with a source, a different person approves.
+  "platform.market_rules.propose": { effect: "consequential", approval: "platform.market_rules.approve" },
+  "platform.market_rules.approve": { effect: "consequential" },
   // An organization's AI policy: on/off, models, budget, autonomy per capability; and its AI request log.
   "ai_policy.manage": { effect: "consequential" },
   "support.handle": { effect: "write" },
@@ -138,12 +141,14 @@ export const ROLE_GRANTS: Record<Role, readonly Grant[]> = {
   platform_admin: [
     ...g("platform", "platform.orgs.view", "platform.orgs.manage", "platform.users.view", "platform.users.manage",
       "platform.markets.view", "platform.markets.configure", "platform.integrations.view", "platform.integrations.manage",
-      "platform.sources.manage", "platform.ai_policy.manage", "audit.view", "support.handle"),
+      "platform.sources.manage", "platform.ai_policy.manage", "audit.view", "support.handle",
+      "platform.market_rules.propose", "platform.market_rules.approve"),
     ...g("org", "org.settings.manage", "org.members.view", "org.members.manage", "approval.view"),
   ],
   // Compliance and support can look things up; only platform administrators change them.
   platform_compliance: [
-    ...g("platform", "audit.view", "platform.orgs.view", "platform.users.view", "platform.markets.view", "platform.integrations.view"),
+    ...g("platform", "audit.view", "platform.orgs.view", "platform.users.view", "platform.markets.view", "platform.integrations.view",
+      "platform.market_rules.approve"),
     ...g("org", "org.members.view", "approval.view"),
   ],
   platform_support: [
