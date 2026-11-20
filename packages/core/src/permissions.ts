@@ -78,6 +78,8 @@ export const PERMISSIONS = {
 
   // Individuals (buyers, investors, renters, tenants)
   "listing.browse": { effect: "read" },
+  /** Approving a project, units or a rental for public display. Audited. */
+  "listing.publish": { effect: "consequential" },
   "shortlist.manage": { effect: "write" },
   "enquiry.create": { effect: "write" },
   "appointment.book": { effect: "write" },
@@ -95,6 +97,7 @@ export const PERMISSIONS = {
   "platform.markets.configure": { effect: "consequential" },
   "platform.sources.manage": { effect: "write" },
   "platform.ai_policy.manage": { effect: "consequential" },
+  "support.handle": { effect: "write" },
 } as const satisfies Record<string, PermissionMeta>;
 
 export type Permission = keyof typeof PERMISSIONS;
@@ -131,7 +134,7 @@ export const ROLE_GRANTS: Record<Role, readonly Grant[]> = {
   platform_admin: [
     ...g("platform", "platform.orgs.view", "platform.orgs.manage", "platform.users.view", "platform.users.manage",
       "platform.markets.view", "platform.markets.configure", "platform.integrations.view", "platform.integrations.manage",
-      "platform.sources.manage", "platform.ai_policy.manage", "audit.view"),
+      "platform.sources.manage", "platform.ai_policy.manage", "audit.view", "support.handle"),
     ...g("org", "org.settings.manage", "org.members.view", "org.members.manage", "approval.view"),
   ],
   // Compliance and support can look things up; only platform administrators change them.
@@ -140,7 +143,7 @@ export const ROLE_GRANTS: Record<Role, readonly Grant[]> = {
     ...g("org", "org.members.view", "approval.view"),
   ],
   platform_support: [
-    ...g("platform", "platform.orgs.view", "platform.users.view", "platform.markets.view", "platform.integrations.view"),
+    ...g("platform", "platform.orgs.view", "platform.users.view", "platform.markets.view", "platform.integrations.view", "support.handle"),
     ...g("org", "org.members.view"),
   ],
 
@@ -150,13 +153,13 @@ export const ROLE_GRANTS: Record<Role, readonly Grant[]> = {
       "project.manage", "unit.manage", "inventory.import", "inventory.verify", "document.manage", "area_profile.manage",
       "unit.hold.approve", "price.change.request", "price.change.approve", "payment_plan.manage", "payment_plan.publish", "payment_plan.approve",
       "partner.view", "partner.manage",
-      "client_registration.review", "lead.view", "lead.assign", "conversation.view",
+      "client_registration.review", "lead.view", "lead.manage", "lead.assign", "viewing.manage", "listing.publish", "conversation.view",
       "campaign.view", "analytics.view", "audit.view", "commission.view", "commission.approve"),
   ],
   developer_sales_manager: [
     ...developerRead,
     ...g("org", "approval.view", "unit.hold.request", "unit.hold.approve", "price.change.request", "partner.view", "partner.manage",
-      "client_registration.review", "lead.view", "lead.manage", "lead.assign",
+      "client_registration.review", "lead.view", "lead.manage", "lead.assign", "viewing.manage", "listing.publish",
       "conversation.view", "conversation.reply", "campaign.view", "analytics.view", "commission.view"),
   ],
   developer_inventory_manager: [
@@ -173,12 +176,13 @@ export const ROLE_GRANTS: Record<Role, readonly Grant[]> = {
     ...g("org", "org.settings.manage", "org.members.view", "org.members.manage", "approval.view",
       "property.view", "property.manage", "occupancy.view", "lease.view", "lease.manage", "lease.sign.approve",
       "tenant.contact.view", "tenant_request.view", "tenant_request.manage", "maintenance.view", "maintenance.manage",
-      "maintenance.spend.approve", "conversation.view", "analytics.view", "audit.view"),
+      "maintenance.spend.approve", "conversation.view", "analytics.view", "audit.view",
+      "lead.view", "lead.manage", "viewing.manage", "listing.publish"),
   ],
   pm_leasing_manager: [
     ...g("org", "approval.view", "property.view", "occupancy.view", "lease.view", "lease.manage",
       "lease.sign.request", "tenant.contact.view", "tenant_request.view", "tenant_request.manage",
-      "lead.view", "lead.manage", "viewing.manage", "conversation.view", "conversation.reply"),
+      "lead.view", "lead.manage", "viewing.manage", "listing.publish", "conversation.view", "conversation.reply"),
   ],
   // Sees tenant names on requests, never their contact details.
   pm_maintenance_coordinator: [
