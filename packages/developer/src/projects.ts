@@ -167,6 +167,14 @@ export async function updateProject(db: Db, actor: Actor, projectId: string, inp
               launch_date = $8, handover_date = $9, status = $10, updated_at = now(), updated_by = $11 where id = $1`,
       [pid, v.name, v.market, v.city, v.location, v.property_types, v.description, v.launch_date, v.handover_date, v.status, actor.userId],
     );
+    // Field history, attributed to the workspace source (milestone 9).
+    for (const k of changed) {
+      await c.query(
+        `insert into app.project_changes (org_id, project_id, actor_user_id, field, from_value, to_value, source_id)
+         values (app.current_org_id(), $1, $2, $3, $4, $5, (select id from app.inventory_sources where org_id = app.current_org_id() and source_type = 'workspace'))`,
+        [pid, actor.userId, k, JSON.stringify(prev[k] ?? null), JSON.stringify(v[k] ?? null)],
+      );
+    }
     await audit(c, actor, { type: "project.updated", target: { type: "project", id: pid }, metadata: { fields: changed.join(",") } });
     return changed;
   });

@@ -10,6 +10,7 @@ import {
   signUpFromInvitation,
   validateSession,
 } from "@baytline/identity";
+import { decideSource, listSourcesForReview } from "../src";
 import { createBootstrapInvitation } from "../../identity/src/bootstrap";
 import {
   deriveStatus,
@@ -318,5 +319,23 @@ describe("demo requests", () => {
     expect((await listDemoRequests(db, support())).find((r) => r.id === id)!.status).toBe("contacted");
     const ev = await raw<{ metadata: Record<string, string> }>(f.adminId, f.plat, "select metadata from app.audit_events where event_type = 'demo_request.status_changed' and target_id = $1", [id]);
     expect(ev[0]!.metadata).toEqual({ from: "new", to: "contacted" });
+  });
+});
+
+describe("inventory source review", () => {
+  it("lets platform staff see feed metadata, and only administrators decide", async () => {
+    // A developer's feed waiting for approval (created directly: the developer service is tested in its own package).
+    const [src] = await raw<{ id: string }>(f.devAdminId, f.devOrg,
+      `insert into app.inventory_sources (org_id, name, source_type, adapter_key, all_projects, authorization_status, authorization_ref, config, secret_names)
+       values ($1, 'Partner feed', 'data_feed', 'https_csv', true, 'pending_approval', 'Agreement 1', '{"url":"https://feeds.example.com/u.csv","record_type":"units"}', '{FEED_X_TOKEN}') returning id`,
+      [f.devOrg]);
+    const list = await listSourcesForReview(db, support());
+    expect(list.map((s) => [s.name, s.orgName, s.host, s.authorization, s.secretNames])).toEqual([["Partner feed", "Test Developer", "feeds.example.com", "pending_approval", ["FEED_X_TOKEN"]]]);
+    expect(await code(decideSource(db, support(), src!.id, "approve"))).toBe("forbidden:platform.sources.manage");
+    expect(await code(decideSource(db, admin(), src!.id, "reject"))).toBe("invalid_input:decision_note_required");
+    expect(await code(decideSource(db, admin(), src!.id, "suspend", "x"))).toBe("invalid_input:invalid_transition");
+    await decideSource(db, admin(), src!.id, "approve");
+    expect((await listSourcesForReview(db, admin(), { status: "authorized" }))[0]).toMatchObject({ authorization: "authorized" });
+    expect(await code(listSourcesForReview(db, devAdmin()))).toBe("forbidden:platform.integrations.view");
   });
 });

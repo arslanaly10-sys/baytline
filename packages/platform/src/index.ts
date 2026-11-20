@@ -12,3 +12,5 @@ export { getIntegrationRegistry, runIntegrationCheck, setIntegrationEnabled } fr
 export type { IntegrationView } from "./integrations/registry";
 export { submitDemoRequest, listDemoRequests, listDemoRequestsByStatus, setDemoRequestStatus, validateDemoRequest, DEMO_ORG_TYPES, DEMO_STATUSES } from "./demo";
 export type { DemoRequestInput, DemoRequestRow, DemoResult, DemoField, DemoOrgType, DemoStatus } from "./demo";
+export { listSourcesForReview, decideSource } from "./sources";
+export type { ReviewSource } from "./sources";

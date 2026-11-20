@@ -6,6 +6,7 @@ import {
   type AvailabilityLabel,
   type PropertyType,
   type SourceKind,
+  type SourceType,
   type UnitStatus,
   type VerificationStatus,
 } from "@baytline/core";
@@ -32,6 +33,8 @@ export type UnitRow = {
   price: UnitPrice | null;
   sourceKind: SourceKind;
   sourceRef: string | null;
+  /** The inventory source that last changed this unit (milestone 9). */
+  source: { id: string; name: string; type: SourceType; authorized: boolean } | null;
   lastUpdatedAt: Date;
   verification: VerificationStatus;
   lastVerifiedAt: Date | null;
@@ -45,11 +48,14 @@ const UNIT_SELECT = `
   select u.id, u.project_id, p.name as project_name, u.phase_id, ph.name as phase_name, u.code, u.property_type,
          u.bedrooms, u.area_sqm::text, u.floor, u.status, u.source_kind, u.source_ref, u.last_updated_at,
          u.verification, u.last_verified_at, u.version, u.is_sample, u.org_id,
+         u.source_id, src.name as source_name, src.source_type, src.freshness_hours as source_freshness_hours,
+         coalesce(src.authorization_status = 'authorized', true) as source_authorized,
          cp.price_minor::text as price_minor, cp.currency, cp.list_name, cp.effective_from
     from app.units u
     join app.projects p on p.id = u.project_id
     join app.markets mk on mk.code = p.market
     left join app.project_phases ph on ph.id = u.phase_id
+    left join app.inventory_sources src on src.id = u.source_id
     left join lateral (
       select e.price_minor, l.currency, l.name as list_name, v.effective_from::text
         from app.price_list_entries e
@@ -77,6 +83,7 @@ function mapUnit(r: Record<string, any>, now: Date): UnitRow {
     price: r.price_minor ? { minor: r.price_minor, currency: r.currency, listName: r.list_name, effectiveFrom: r.effective_from } : null,
     sourceKind: r.source_kind,
     sourceRef: r.source_ref,
+    source: r.source_id ? { id: r.source_id, name: r.source_name, type: r.source_type, authorized: r.source_authorized } : null,
     lastUpdatedAt: r.last_updated_at,
     verification: r.verification,
     lastVerifiedAt: r.last_verified_at,
@@ -92,6 +99,8 @@ function mapUnit(r: Record<string, any>, now: Date): UnitRow {
         verification: r.verification,
         version: r.version,
         isSample: r.is_sample,
+        freshnessHours: r.source_freshness_hours,
+        sourceAuthorized: r.source_authorized,
       },
       now,
     ),
@@ -115,7 +124,7 @@ export async function listUnits(db: Db, actor: Actor, s: UnitSearch = {}, now = 
   });
 }
 
-export type UnitChange = { id: string; at: Date; actorName: string | null; field: string; from: unknown; to: unknown; version: number; sourceKind: string };
+export type UnitChange = { id: string; at: Date; actorName: string | null; field: string; from: unknown; to: unknown; version: number; sourceKind: string; sourceName: string | null; batchId: string | null };
 export type PricePoint = { minor: string; currency: string; listName: string; version: number; status: string; effectiveFrom: string; effectiveTo: string | null };
 
 export type UnitDetail = UnitRow & { history: UnitChange[]; prices: PricePoint[]; canManage: boolean; canVerify: boolean; canSetBinding: boolean };
@@ -127,8 +136,8 @@ export async function getUnit(db: Db, actor: Actor, unitId: string, now = new Da
     const { rows } = await c.query(`${UNIT_SELECT} where u.id = $1 and u.org_id = app.current_org_id()`, [uid]);
     if (!rows[0]) throw new IdentityError("not_found");
     const { rows: hist } = await c.query(
-      `select h.id::text, h.at, u.display_name, h.field, h.from_value, h.to_value, h.version, h.source_kind
-         from app.unit_changes h left join app.users u on u.id = h.actor_user_id
+      `select h.id::text, h.at, u.display_name, h.field, h.from_value, h.to_value, h.version, h.source_kind, s.name as source_name, h.batch_id
+         from app.unit_changes h left join app.users u on u.id = h.actor_user_id left join app.inventory_sources s on s.id = h.source_id
         where h.unit_id = $1 order by h.id desc limit 200`,
       [uid],
     );
@@ -145,7 +154,7 @@ export async function getUnit(db: Db, actor: Actor, unitId: string, now = new Da
       canManage: can(ctx, "unit.manage"),
       canVerify: can(ctx, "inventory.verify") && !rows[0].is_sample,
       canSetBinding: can(ctx, "unit.hold.approve"),
-      history: hist.map((h) => ({ id: h.id, at: h.at, actorName: h.display_name, field: h.field, from: h.from_value, to: h.to_value, version: h.version, sourceKind: h.source_kind })),
+      history: hist.map((h) => ({ id: h.id, at: h.at, actorName: h.display_name, field: h.field, from: h.from_value, to: h.to_value, version: h.version, sourceKind: h.source_kind, sourceName: h.source_name, batchId: h.batch_id })),
       prices: prices.map((p) => ({ minor: p.price_minor, currency: p.currency, listName: p.name, version: p.version, status: p.status, effectiveFrom: p.effective_from, effectiveTo: p.effective_to })),
     };
   });
@@ -181,8 +190,8 @@ const TRACKED: (keyof Fields)[] = ["code", "phase_id", "property_type", "bedroom
 async function logChanges(c: Client, actor: Actor, unitId: string, version: number, changes: [string, unknown, unknown][], sourceKind: string) {
   for (const [field, from, to] of changes) {
     await c.query(
-      `insert into app.unit_changes (org_id, unit_id, version, actor_user_id, field, from_value, to_value, source_kind)
-       values (app.current_org_id(), $1, $2, $3, $4, $5, $6, $7)`,
+      `insert into app.unit_changes (org_id, unit_id, version, actor_user_id, field, from_value, to_value, source_kind, source_id)
+       values (app.current_org_id(), $1, $2, $3, $4, $5, $6, $7, (select id from app.inventory_sources where org_id = app.current_org_id() and source_type = 'workspace'))`,
       [unitId, version, actor.userId, field, JSON.stringify(from ?? null), JSON.stringify(to ?? null), sourceKind],
     );
   }
@@ -205,8 +214,8 @@ export async function createUnit(db: Db, actor: Actor, projectId: string, input:
     try {
       await c.query("savepoint s");
       const { rows } = await c.query<{ id: string }>(
-        `insert into app.units (org_id, project_id, phase_id, code, property_type, bedrooms, area_sqm, floor, status, source_ref, created_by)
-         values (app.current_org_id(), $1, $2, $3, $4, $5, $6, $7, $8, $9, $10) returning id`,
+        `insert into app.units (org_id, project_id, phase_id, code, property_type, bedrooms, area_sqm, floor, status, source_ref, created_by, source_id)
+         values (app.current_org_id(), $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, (select id from app.inventory_sources where org_id = app.current_org_id() and source_type = 'workspace')) returning id`,
         [pid, v.phase_id, v.code, v.property_type, v.bedrooms, v.area_sqm, v.floor, v.status, v.source_ref, actor.userId],
       );
       const uid = rows[0]!.id;
@@ -257,7 +266,7 @@ export async function updateUnit(db: Db, actor: Actor, unitId: string, input: Un
       await c.query("savepoint s");
       await c.query(
         `update app.units set code = $2, phase_id = $3, property_type = $4, bedrooms = $5, area_sqm = $6, floor = $7, status = $8,
-                source_ref = $9, version = $10, last_updated_at = now(), source_kind = 'partner_portal',
+                source_ref = $9, version = $10, last_updated_at = now(), source_kind = 'partner_portal', source_id = (select id from app.inventory_sources where org_id = app.current_org_id() and source_type = 'workspace'),
                 verification = case when verification = 'verified' then 'owner_reported' else verification end,
                 last_verified_at = case when verification = 'verified' then null else last_verified_at end,
                 verified_by = case when verification = 'verified' then null else verified_by end

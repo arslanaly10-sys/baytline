@@ -51,16 +51,23 @@ export const DEFAULT_FRESHNESS_HOURS: Record<SourceKind, number> = {
 export type AvailabilityLabel = "live" | "recently_confirmed" | "stale" | "unverified" | "disputed";
 
 export function availabilityLabel(
-  p: Provenance & { isSample?: boolean },
+  p: Provenance & {
+    isSample?: boolean;
+    /** The record's source freshness window (hours), when the source configures one. Never longer than the kind's default. */
+    freshnessHours?: number | null;
+    /** False when the record's source is no longer authorized: its confirmations no longer count. */
+    sourceAuthorized?: boolean;
+  },
   now: Date,
   freshness: Record<SourceKind, number> = DEFAULT_FRESHNESS_HOURS,
 ): AvailabilityLabel {
   // Sample records are never presented as confirmed availability, whatever their fields say.
   if (p.isSample) return "unverified";
   if (p.verification === "disputed") return "disputed";
+  if (p.sourceAuthorized === false) return "unverified";
   if (p.verification !== "verified" || !p.lastVerifiedAt) return "unverified";
   const ageHours = (now.getTime() - new Date(p.lastVerifiedAt).getTime()) / 36e5;
-  const window = freshness[p.sourceKind];
+  const window = p.freshnessHours && p.freshnessHours > 0 ? Math.min(p.freshnessHours, freshness[p.sourceKind]) : freshness[p.sourceKind];
   if (ageHours < 0 || Number.isNaN(ageHours)) return "unverified";
   if (ageHours > window) return "stale";
   // Only a real-time authorized API can be called live.

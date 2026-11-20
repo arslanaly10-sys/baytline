@@ -25,6 +25,8 @@ export const PERMISSIONS = {
   "project.manage": { effect: "write" },
   "inventory.view": { effect: "read" },
   "inventory.import": { effect: "write" },
+  // A partner brokerage proposes inventory updates; the developer reviews and confirms them.
+  "inventory.update.submit": { effect: "write" },
   "unit.manage": { effect: "write" },
   "partner.view": { effect: "read" },
   "partner.manage": { effect: "write" },
@@ -198,12 +200,12 @@ export const ROLE_GRANTS: Record<Role, readonly Grant[]> = {
       "client_registration.submit", "lead.view", "lead.manage", "lead.assign", "viewing.manage",
       "deal.view", "deal.manage", "commission.view", "conversation.view", "conversation.reply",
       "campaign.view", "analytics.view", "audit.view"),
-    ...g("shared", "project.view", "inventory.view", "price.view", "document.view", "area_profile.view", "unit.hold.request"),
+    ...g("shared", "project.view", "inventory.view", "price.view", "document.view", "area_profile.view", "unit.hold.request", "inventory.update.submit"),
   ],
   brokerage_manager: [
     ...g("org", "approval.view", "client_registration.submit", "lead.view", "lead.manage", "lead.assign",
       "viewing.manage", "deal.view", "deal.manage", "commission.view", "conversation.view", "conversation.reply", "analytics.view"),
-    ...g("shared", "project.view", "inventory.view", "price.view", "document.view", "area_profile.view", "unit.hold.request"),
+    ...g("shared", "project.view", "inventory.view", "price.view", "document.view", "area_profile.view", "unit.hold.request", "inventory.update.submit"),
   ],
   brokerage_agent: [
     ...g("assigned", "lead.view", "lead.manage", "viewing.manage", "deal.view", "deal.manage",

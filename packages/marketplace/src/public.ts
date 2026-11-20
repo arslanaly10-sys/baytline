@@ -28,14 +28,18 @@ export type AvailabilityState =
 export type Availability = { state: AvailabilityState; label: AvailabilityLabel; confirmedAt: Date | null };
 
 export function unitAvailability(
-  u: { status: string; sourceKind: SourceKind; verification: VerificationStatus; lastVerifiedAt: Date | null; lastUpdatedAt: Date },
+  u: { status: string; sourceKind: SourceKind; verification: VerificationStatus; lastVerifiedAt: Date | null; lastUpdatedAt: Date; freshnessHours?: number | null; sourceAuthorized?: boolean },
   now: Date,
 ): Availability {
   const label = availabilityLabel(
-    { sourceKind: u.sourceKind, sourceId: "", ownerOrgId: "", lastUpdatedAt: u.lastUpdatedAt.toISOString(), lastVerifiedAt: u.lastVerifiedAt?.toISOString(), verification: u.verification, version: 1 },
+    {
+      sourceKind: u.sourceKind, sourceId: "", ownerOrgId: "", lastUpdatedAt: u.lastUpdatedAt.toISOString(), lastVerifiedAt: u.lastVerifiedAt?.toISOString(),
+      verification: u.verification, version: 1, freshnessHours: u.freshnessHours, sourceAuthorized: u.sourceAuthorized,
+    },
     now,
   );
-  const confirmedAt = u.verification === "verified" ? u.lastVerifiedAt : null;
+  // A confirmation from a source that is no longer authorized isn't shown as one.
+  const confirmedAt = u.verification === "verified" && u.sourceAuthorized !== false ? u.lastVerifiedAt : null;
   if (u.status === "reserved") return { state: "reserved", label, confirmedAt };
   if (u.status === "sold") return { state: "sold", label, confirmedAt };
   if (u.status !== "available") return { state: "not_offered", label, confirmedAt };
@@ -189,7 +193,7 @@ const mapUnit = (r: Record<string, any>, now: Date): PublicUnit => ({
   handover: r.phase_expected_handover ? { date: r.phase_expected_handover, basis: "phase" } : r.project_handover_date ? { date: r.project_handover_date, basis: "project" } : null,
   verified: r.verification === "verified",
   sourceKind: r.source_kind,
-  availability: unitAvailability({ status: r.status, sourceKind: r.source_kind, verification: r.verification, lastVerifiedAt: r.last_verified_at, lastUpdatedAt: r.last_updated_at }, now),
+  availability: unitAvailability({ status: r.status, sourceKind: r.source_kind, verification: r.verification, lastVerifiedAt: r.last_verified_at, lastUpdatedAt: r.last_updated_at, freshnessHours: r.source_freshness_hours, sourceAuthorized: r.source_authorized }, now),
   lastUpdatedAt: r.last_updated_at,
 });
 

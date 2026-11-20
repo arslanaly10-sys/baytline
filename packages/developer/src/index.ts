@@ -17,3 +17,19 @@ export {
   filterPlaces, mapPlace, parseCsv, validatePlace, listSharedProjects, IMPORT_COLUMNS, IMPORT_MAX_ROWS,
 } from "./location";
 export type { SharedProject, LocationProfile, LocationRecord, PlaceRow, PlaceInput, LocationInput, LocationFilters, LocationSummary, ImportResult } from "./location";
+// Milestone 9: inventory sources and imports.
+export {
+  listSources, getSource, createSource, updateSource, submitSourceForApproval, suspendSource, resumeSource, revokeSource, listPartnerOptions, syncSource,
+  FEED_FAILURE_SUMMARIES,
+} from "./sources/service";
+export type { SourceView, SourceDetail, SourceInput, SyncRun, SyncResult } from "./sources/service";
+export { uploadImport, stageFeedBatch, mapAndValidate, revalidateBatch, cancelBatch, getBatch, listBatches, applyBatch } from "./sources/imports";
+export type { BatchDetail, BatchRow, BatchListRow, BatchStatus, ApplyInput, ApplyResult, UploadInput } from "./sources/imports";
+export { validateRows, summarize, previewHash } from "./sources/validate";
+export type { ValidatedRow, RowAction, FieldChange, RowIssue, ValidationContext } from "./sources/validate";
+export { listMyPartnerSources, submitPartnerUpdate } from "./sources/partner";
+export type { PartnerSourceView } from "./sources/partner";
+export { listInventoryChanges } from "./sources/history";
+export type { InventoryChange, HistoryFilter } from "./sources/history";
+export { ADAPTERS, adapterByKey, adaptersFor, checkFeedUrl, FeedError } from "./sources/adapters";
+export type { SourceAdapter, AdapterDeps, FeedPayload, ConfigField } from "./sources/adapters";

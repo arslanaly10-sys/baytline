@@ -250,7 +250,7 @@ describe("documents", () => {
 describe("brokerage partners", () => {
   it("only partner managers share, never sample projects, only to brokerages", async () => {
     const dir = await brokerageDirectory(db, u.sales);
-    expect(dir.map((d) => d.name)).toEqual(["Brokerage X", "Brokerage Y"]);
+    expect(dir.map((d) => d.name).filter((n) => n.startsWith("Brokerage "))).toEqual(["Brokerage X", "Brokerage Y"]); // other test files add their own
     expect(await code(grantShare(db, u.inv, { projectId: f.project, brokerageId: u.brkX.orgId, includePricing: false, includeDocuments: true }))).toBe("forbidden:partner.manage");
     expect(await code(grantShare(db, u.sales, { projectId: f.sampleProject, brokerageId: u.brkX.orgId, includePricing: false, includeDocuments: false }))).toBe("invalid_input:sample_not_shareable");
     expect(await code(grantShare(db, u.sales, { projectId: f.project, brokerageId: u.devB.orgId, includePricing: false, includeDocuments: false }))).toBe("invalid_input:brokerage");
