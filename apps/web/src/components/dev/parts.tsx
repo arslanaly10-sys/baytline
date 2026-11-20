@@ -163,7 +163,11 @@ export function UnitTable({ dict, units, base, locale, showProject }: { dict: Di
               <td className="px-3 py-2.5 tabular-nums">{u.areaSqm ?? ""}</td>
               <td className="px-3 py-2.5"><Chip tone={unitTone(u.status)}>{t.statuses[u.status]}</Chip></td>
               <td className="px-3 py-2.5 tabular-nums whitespace-nowrap">{u.price ? money(u.price.minor, u.price.currency, locale) : <span className="text-ink-muted">{t.noPrice}</span>}</td>
-              <td className="px-3 py-2.5"><ProvenanceChip status={u.availability} label={dict.provenance[u.availability]} /></td>
+              <td className="px-3 py-2.5">
+                <ProvenanceChip status={u.availability} label={dict.provenance[u.availability]} />
+                {u.source && <span className="mt-1 block text-xs text-ink-muted">{u.source.type === "workspace" ? dict.src.types.workspace.name : u.source.name}</span>}
+                {u.source && !u.source.authorized && <span className="mt-1 block"><Chip tone="attention">{dict.src.freshness.sourceSuspended}</Chip></span>}
+              </td>
               <td className="px-3 py-2.5 whitespace-nowrap text-ink-muted">{date.format(u.lastUpdatedAt)}</td>
             </tr>
           ))}

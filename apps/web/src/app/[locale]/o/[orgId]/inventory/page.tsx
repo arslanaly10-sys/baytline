@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { UNIT_STATUSES } from "@baytline/core";
-import { listProjects, listSharedProjects, listUnits } from "@baytline/developer";
+import { listMyPartnerSources, listProjects, listSharedProjects, listUnits } from "@baytline/developer";
+import { hasCapability } from "@baytline/core";
+import { PartnerUpdates } from "@/components/sources/PartnerUpdates";
 import { PartnerInventory } from "@/components/location/PartnerInventory";
 import { actorOf, devSection } from "@/server/dev-page";
 import { getDb } from "@/server/db";
@@ -18,7 +20,17 @@ export default async function InventoryPage({ params, searchParams }: { params: 
   const q = await searchParams;
   const { page, allowed, section, isDeveloper } = await devSection(locale, orgId, "inventory");
   if (allowed && page.ctx.org.type === "brokerage") {
-    return <PartnerInventory page={page} projects={await listSharedProjects(getDb(), actorOf(page))} />;
+    const canSubmit = hasCapability(page.ctx.principal, "inventory.update.submit");
+    const [shared, partnerSources] = await Promise.all([
+      listSharedProjects(getDb(), actorOf(page)),
+      canSubmit ? listMyPartnerSources(getDb(), actorOf(page)) : Promise.resolve(null),
+    ]);
+    return (
+      <div className="space-y-12">
+        <PartnerInventory page={page} projects={shared} />
+        {partnerSources && <PartnerUpdates page={page} sources={partnerSources} />}
+      </div>
+    );
   }
   if (!allowed || !isDeveloper) return <SectionShell page={page} section={section} allowed={allowed} />;
   const { dict } = page;

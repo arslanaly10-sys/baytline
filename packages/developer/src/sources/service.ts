@@ -55,7 +55,7 @@ const SOURCE_SELECT = `
          coalesce((select json_agg(json_build_object('id', p.id, 'name', p.name) order by p.name)
                      from app.inventory_source_projects sp join app.projects p on p.id = sp.project_id where sp.source_id = s.id), '[]') as projects
     from app.inventory_sources s
-    left join app.organizations po on po.id = s.partner_org_id
+    left join app.brokerage_directory() po on po.id = s.partner_org_id
     left join app.users au on au.id = s.authorized_by
     left join app.users cu on cu.id = s.created_by`;
 
@@ -358,9 +358,10 @@ export async function listPartnerOptions(db: Db, actor: Actor): Promise<{ id: st
   return withAppTx(db, actor, async (c) => {
     await requireDeveloper(c, actor, "partner.view");
     const { rows } = await c.query(
-      `select o.id, o.name, json_agg(json_build_object('id', p.id, 'name', p.name) order by p.name) as projects
-         from app.project_shares s join app.organizations o on o.id = s.brokerage_org_id join app.projects p on p.id = s.project_id
-        where s.org_id = app.current_org_id() and s.status = 'active' group by o.id, o.name order by o.name`,
+      // Brokerage names come from the directory function: developers can't read other organizations' rows.
+      `select d.id, d.name, json_agg(json_build_object('id', p.id, 'name', p.name) order by p.name) as projects
+         from app.project_shares s join app.brokerage_directory() d on d.id = s.brokerage_org_id join app.projects p on p.id = s.project_id
+        where s.org_id = app.current_org_id() and s.status = 'active' group by d.id, d.name order by d.name`,
     );
     return rows.map((r) => ({ id: r.id, name: r.name, projects: r.projects }));
   });

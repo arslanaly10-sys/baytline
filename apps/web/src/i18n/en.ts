@@ -3,6 +3,7 @@
  * Other locales must satisfy `Dictionary` (enforced by the type checker).
  * Use {name} placeholders with `format()`; never build sentences by concatenation.
  */
+import srcEn from "./sources.en";
 const en = {
   brand: {
     name: "Baytline",
@@ -36,15 +37,15 @@ const en = {
   provenance: {
     live: "Live",
     recently_confirmed: "Recently confirmed",
-    stale: "Needs refresh",
+    stale: "Stale",
     unverified: "Unverified",
-    disputed: "Under review",
+    disputed: "Conflicting",
     describe: {
       live: "Confirmed by the owner's authorized real-time connection within the last hour.",
       recently_confirmed: "Confirmed by the owner through a feed, import or update inside its freshness window.",
       stale: "Last confirmation is older than its freshness window. Check before quoting.",
       unverified: "Not yet confirmed by the owning organization.",
-      disputed: "Sources disagree. Held back from buyers until resolved.",
+      disputed: "Sources disagree. Not shown as available until someone checks it.",
     },
   },
   errors: {
@@ -1207,6 +1208,7 @@ const en = {
       cost: "The cost must be a positive amount, with no more decimals than the currency allows.",
     },
   },
+  src: srcEn,
   loc: {
     tab: "Location",
     title: "Location",
@@ -1991,6 +1993,7 @@ const en = {
         inventory: { label: "Inventory", description: "Units and availability, each with its source, last update, verification state and history." },
         pricing: { label: "Pricing and plans", description: "Price lists and payment plans. Changes go through requests and approvals." },
         documents: { label: "Documents", description: "Brochures, floor plans and sales documents, versioned and shared by permission." },
+        sources: { label: "Sources and imports", description: "Where inventory updates come from: your team, partners, files and feeds. Review imports before they change anything." },
         "area-profiles": { label: "Area profiles", description: "Nearby amenities, transport, infrastructure and competing developments for each project." },
         leads: { label: "Leads", description: "Enquiries from every channel, scored and routed to your sales team or partner brokers." },
         partners: { label: "Partners", description: "Brokerages you work with and which projects each can see." },

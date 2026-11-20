@@ -18,6 +18,7 @@ import {
   grantShare,
   listInventoryChanges,
   listMyPartnerSources,
+  listPartnerOptions,
   listSources,
   mapAndValidate,
   savePhase,
@@ -385,7 +386,9 @@ describe("partner updates", () => {
     await grantShare(db, u.admin, { projectId: f.project, brokerageId: u.brk.orgId, includePricing: false, includeDocuments: false });
     expect(await code(createSource(db, u.inv, { type: "partner", name: "Brokerage updates", authorizationRef: "Agency agreement", partnerOrgId: u.brk.orgId, projectIds: [f.project] }))).toBe("forbidden:partner.manage");
     expect(await code(createSource(db, u.admin, { type: "partner", name: "Brokerage updates", authorizationRef: "Agency agreement", partnerOrgId: u.brk.orgId, projectIds: [f.project2] }))).toBe("invalid_input:partner_projects");
+    expect(await listPartnerOptions(db, u.admin)).toMatchObject([{ name: "Source Brokerage", projects: [{ name: "Source Tower" }] }]);
     f.partner = await createSource(db, u.admin, { type: "partner", name: "Brokerage updates", authorizationRef: "Agency agreement", partnerOrgId: u.brk.orgId, projectIds: [f.project] });
+    expect((await getSource(db, u.inv, f.partner)).partner).toMatchObject({ name: "Source Brokerage" });
 
     const mine = await listMyPartnerSources(db, u.brk);
     expect(mine).toMatchObject([{ name: "Brokerage updates", developerName: "Source Dev", projects: [{ name: "Source Tower" }] }]);
@@ -398,7 +401,7 @@ describe("partner updates", () => {
     expect(await raw(u.brk, "select * from app.import_rows")).toEqual([]);
 
     const b = await getBatch(db, u.inv, bid);
-    expect(b).toMatchObject({ status: "submitted", partnerSubmitted: true, mapping: { code: 0, status: 1 } });
+    expect(b).toMatchObject({ status: "submitted", partnerSubmitted: true, mapping: { code: 0, status: 1 }, source: { partnerName: "Source Brokerage" } });
     await mapAndValidate(db, u.inv, bid, b.mapping!);
     const v = await getBatch(db, u.inv, bid);
     expect(v.summary).toMatchObject({ update: 1, error: 1 });

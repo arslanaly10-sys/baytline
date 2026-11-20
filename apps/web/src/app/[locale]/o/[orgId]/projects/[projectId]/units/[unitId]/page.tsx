@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getUnit } from "@baytline/developer";
 import { IdentityError } from "@baytline/identity";
@@ -66,6 +67,15 @@ export default async function UnitPage({ params }: { params: Promise<{ locale: s
             <h3 id="prov" className="text-lg">{t.provenance}</h3>
             <dl className="mt-3 space-y-2 text-sm">
               <div><dt className="text-ink-muted">{t.source}</dt><dd>{t.sources[unit.sourceKind]}{unit.sourceRef && <span className="text-ink-muted" dir="ltr"> ({unit.sourceRef})</span>}</dd></div>
+              {unit.source && (
+                <div>
+                  <dt className="text-ink-muted">{dict.src.freshness.source}</dt>
+                  <dd>
+                    <Link href={`/${locale}/o/${orgId}/sources/${unit.source.id}`} className="text-gulf-strong underline-offset-4 hover:underline">{unit.source.type === "workspace" ? dict.src.types.workspace.name : unit.source.name}</Link>
+                    {!unit.source.authorized && <span className="block text-coral">{dict.src.freshness.sourceSuspended}</span>}
+                  </dd>
+                </div>
+              )}
               <div><dt className="text-ink-muted">{t.lastUpdated}</dt><dd>{when.format(unit.lastUpdatedAt)}</dd></div>
               <div>
                 <dt className="text-ink-muted">{t.verification}</dt>
@@ -111,7 +121,7 @@ export default async function UnitPage({ params }: { params: Promise<{ locale: s
           <ol className="mt-3 divide-y divide-line border-y border-line text-sm">
             {unit.history.map((h) => (
               <li key={h.id} className="grid gap-1 py-2.5 sm:grid-cols-[12rem_minmax(0,1fr)] sm:gap-4">
-                <span className="text-ink-muted">{when.format(h.at)}<span className="block text-xs">{h.actorName}. {format(t.version, { n: h.version })}</span></span>
+                <span className="text-ink-muted">{when.format(h.at)}<span className="block text-xs">{h.actorName}. {format(t.version, { n: h.version })}</span>{h.sourceName && <span className="block text-xs">{h.batchId ? <Link href={`/${locale}/o/${orgId}/sources/imports/${h.batchId}`} className="underline underline-offset-4">{h.sourceName}</Link> : h.sourceName}</span>}</span>
                 <span>
                   <span className="font-medium">{(t.fieldNames as Record<string, string>)[h.field] ?? h.field}</span>
                   {h.field !== "created" && <> : <ChangeValue v={h.from} field={h.field} dict={dict} phases={phaseNames} /> → <ChangeValue v={h.to} field={h.field} dict={dict} phases={phaseNames} /></>}

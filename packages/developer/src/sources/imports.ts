@@ -244,12 +244,14 @@ export type BatchDetail = {
   source: { id: string; name: string; type: SourceType; authorization: string; trusted: boolean; partnerName: string | null };
   partnerSubmitted: boolean; createdAt: Date; createdByName: string | null; validatedAt: Date | null; appliedAt: Date | null; appliedByName: string | null;
   conflictPolicy: string | null; confirmedVerified: boolean | null;
+  /** Fingerprint of the validated preview; sent back on confirm so apply knows what was reviewed. */
+  previewHash: string | null;
   rows: BatchRow[]; filteredCount: number;
   /** What the confirming person needs, and has. */
   needs: { holdApproval: boolean; priceRequest: boolean; planManage: boolean; projectManage: boolean };
   can: { apply: boolean; confirmVerified: boolean; manage: boolean };
   /** Drafts created by applying, for prices and plans. */
-  drafts: { kind: "price" | "plan"; id: string; name: string; version: number; status: string }[];
+  drafts: { kind: "price" | "plan"; id: string; name: string; version: number; status: string; projectId: string }[];
 };
 
 export async function getBatch(db: Db, actor: Actor, batchId: string, filter: { action?: string; page?: number } = {}): Promise<BatchDetail> {
@@ -260,7 +262,7 @@ export async function getBatch(db: Db, actor: Actor, batchId: string, filter: { 
       `select b.*, s.name as source_name, s.source_type, s.authorization_status, s.trusted, po.name as partner_name,
               cu.display_name as created_by_name, au.display_name as applied_by_name
          from app.import_batches b join app.inventory_sources s on s.id = b.source_id
-         left join app.organizations po on po.id = s.partner_org_id
+         left join app.brokerage_directory() po on po.id = s.partner_org_id
          left join app.users cu on cu.id = b.created_by left join app.users au on au.id = b.applied_by
         where b.id = $1 and b.org_id = app.current_org_id()`,
       [bid],
@@ -282,9 +284,9 @@ export async function getBatch(db: Db, actor: Actor, batchId: string, filter: { 
       [bid],
     );
     const { rows: drafts } = await c.query(
-      `select 'price' as kind, v.id, l.name, v.version, v.status from app.price_list_versions v join app.price_lists l on l.id = v.price_list_id where v.import_batch_id = $1
+      `select 'price' as kind, v.id, l.name, v.version, v.status, l.project_id from app.price_list_versions v join app.price_lists l on l.id = v.price_list_id where v.import_batch_id = $1
        union all
-       select 'plan', v.id, p.name, v.version, v.status from app.payment_plan_versions v join app.payment_plans p on p.id = v.plan_id where v.import_batch_id = $1`,
+       select 'plan', v.id, p.name, v.version, v.status, p.project_id from app.payment_plan_versions v join app.payment_plans p on p.id = v.plan_id where v.import_batch_id = $1`,
       [bid],
     );
     const needs = {
@@ -299,6 +301,7 @@ export async function getBatch(db: Db, actor: Actor, batchId: string, filter: { 
       source: { id: b.source_id, name: b.source_name, type: b.source_type, authorization: b.authorization_status, trusted: b.trusted, partnerName: b.partner_name },
       partnerSubmitted: Boolean(b.submitted_by_org), createdAt: b.created_at, createdByName: b.created_by_name, validatedAt: b.validated_at,
       appliedAt: b.applied_at, appliedByName: b.applied_by_name, conflictPolicy: b.conflict_policy, confirmedVerified: b.confirmed_verified,
+      previewHash: b.preview_hash,
       rows: list.map((r) => ({
         rowNo: r.row_no, action: r.action, targetType: r.target_type, targetId: r.target_id, targetLabel: r.target_label,
         changes: r.changes, errors: r.errors, warnings: r.warnings, raw: (b.raw_rows as string[][])[r.row_no - 1] ?? [],
@@ -311,7 +314,7 @@ export async function getBatch(db: Db, actor: Actor, batchId: string, filter: { 
           && (!needs.planManage || can(ctx, "payment_plan.manage")) && (!needs.projectManage || can(ctx, "project.manage")),
         confirmVerified: can(ctx, "inventory.verify") && (b.record_type === "units"),
       },
-      drafts: drafts.map((d) => ({ kind: d.kind, id: d.id, name: d.name, version: d.version, status: d.status })),
+      drafts: drafts.map((d) => ({ kind: d.kind, id: d.id, name: d.name, version: d.version, status: d.status, projectId: d.project_id })),
     };
   });
 }
