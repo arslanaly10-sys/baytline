@@ -3,6 +3,8 @@ import { getDictionary } from "@/i18n";
 import { requireLocale } from "@/server/guards";
 import { AI_CAPABILITIES, type WorkspaceId } from "@baytline/core";
 import { AVAILABLE_AUDIENCES, PageHero, Status } from "@/components/site/sections";
+import { Photo } from "@/components/site/Photo";
+import { AUDIENCE_PHOTO } from "@/lib/photos";
 
 type Params = { params: Promise<{ locale: string }> };
 
@@ -49,6 +51,8 @@ export default async function SolutionsPage({ params }: Params) {
                   ))}
                 </ul>
               </div>
+              <div className="space-y-5">
+              <Photo slug={AUDIENCE_PHOTO[key]} alt={s.photos.alt[AUDIENCE_PHOTO[key]]} ratio="3 / 2" className="rounded-3xl" sizes="(min-width: 1024px) 680px, 100vw" />
               <div className="rounded-3xl border border-hairline bg-night-2 p-6 sm:p-8">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <h3 className="text-sm tracking-[0.14em] text-gold-light uppercase">{t.aiTitle}</h3>
@@ -65,6 +69,7 @@ export default async function SolutionsPage({ params }: Params) {
                     );
                   })}
                 </ul>
+              </div>
               </div>
             </div>
           </section>

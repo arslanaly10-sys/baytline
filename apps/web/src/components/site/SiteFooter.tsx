@@ -41,7 +41,10 @@ export function SiteFooter({ dict, locale }: { dict: Dictionary; locale: UiLocal
           <p className="mt-3 text-xs text-mist/80">{t.draftNote}</p>
         </nav>
       </div>
-      <p className="mx-auto max-w-7xl px-4 pb-8 text-xs text-mist sm:px-8">{t.rights}</p>
+      <p className="mx-auto flex max-w-7xl flex-wrap gap-x-4 gap-y-1 px-4 pb-8 text-xs text-mist sm:px-8">
+        <span>{t.rights}</span>
+        <span>{dict.site.photos.creditLine} <Link href={`/${locale}/credits`} className="underline underline-offset-2 hover:text-gold-light">{dict.site.photos.creditLink}</Link></span>
+      </p>
     </footer>
   );
 }

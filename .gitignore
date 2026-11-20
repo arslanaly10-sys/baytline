@@ -16,3 +16,4 @@ playwright-report/
 .taste-skill/chrome-*
 **/.taste-skill/chrome-*
 shots/
+apps/web/.taste-skill/

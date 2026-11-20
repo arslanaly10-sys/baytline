@@ -16,7 +16,7 @@ export function SiteHeader({ dict, locale }: Props) {
     { href: `${home}/security`, label: t.security },
   ];
   return (
-    <header className="fixed inset-x-0 top-0 z-40">
+    <header className="fixed inset-x-0 top-0 z-40 bg-gradient-to-b from-night/85 to-night/0 backdrop-blur-[2px]">
       <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-4 sm:gap-6 sm:px-8">
         <Link href={home} aria-label={t.home} className="flex items-center gap-2.5 text-gold">
           <BrandMark className="size-9" />

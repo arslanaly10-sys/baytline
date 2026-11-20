@@ -56,8 +56,8 @@ type Keyframe = { at: number; top: string; horizon: string; sun: string; sunPowe
 /** Lighting keyframes along the film's progress. */
 const SKY: Keyframe[] = [
   { at: 0.0, top: "#1b2442", horizon: "#e7a37c", sun: "#ffb48a", sunPower: 1.3, ambient: 0.35, elevation: 3, azimuth: 70, fog: 0.0024 },
-  { at: 0.3, top: "#3b6a9c", horizon: "#d8c8a9", sun: "#fff1d4", sunPower: 2.6, ambient: 0.6, elevation: 38, azimuth: 30, fog: 0.0015 },
-  { at: 0.52, top: "#2c4670", horizon: "#f0b15c", sun: "#ffbe6e", sunPower: 2.2, ambient: 0.45, elevation: 9, azimuth: -40, fog: 0.0019 },
+  { at: 0.3, top: "#3b6a9c", horizon: "#d8c8a9", sun: "#fff1d4", sunPower: 2.6, ambient: 0.6, elevation: 38, azimuth: 30, fog: 0.0012 },
+  { at: 0.52, top: "#2c4670", horizon: "#f0b15c", sun: "#ffbe6e", sunPower: 2.2, ambient: 0.45, elevation: 9, azimuth: -40, fog: 0.0015 },
   { at: 0.66, top: "#141b37", horizon: "#8c4a62", sun: "#ff8a5c", sunPower: 0.7, ambient: 0.25, elevation: -2, azimuth: -60, fog: 0.0021 },
   { at: 0.86, top: "#05080f", horizon: "#18223a", sun: "#7d93c4", sunPower: 0.28, ambient: 0.14, elevation: 32, azimuth: 120, fog: 0.0015 },
   { at: 1.0, top: "#04070d", horizon: "#141d31", sun: "#7d93c4", sunPower: 0.26, ambient: 0.13, elevation: 34, azimuth: 125, fog: 0.0014 },
@@ -182,7 +182,10 @@ const buildingMaterial = (shared: Record<string, THREE.IUniform>) =>
         // Materials: 0 glass tower, 1 sandstone heritage block, 2 champagne spire tower, 3 barjeel (wind tower)
         vec3 base = vType < 0.5 ? vec3(0.07, 0.11, 0.14) : vType < 1.5 ? vec3(0.62, 0.52, 0.38) : vType < 2.5 ? vec3(0.42, 0.38, 0.31) : vec3(0.6, 0.5, 0.36);
         float diffuse = max(dot(n, normalize(uSunDir)), 0.0);
-        vec3 col = base * (uAmbient * mix(uHorizon, uSkyTop, 0.5) * 1.6 + uSunColor * uSunPower * diffuse * 0.55);
+        // Each building gets its own slightly different finish, so the city doesn't read as one material.
+        base *= 0.86 + 0.28 * hash(vec2(vSeed * 7.13, vType));
+        // Faces in shade take the cooler light of the open sky; faces toward the sun take its warm colour.
+        vec3 col = base * (uAmbient * mix(uHorizon, uSkyTop, 0.72) * 1.7 + uSunColor * uSunPower * diffuse * 0.6);
 
         // Windows on side faces
         vec2 face = vec2(abs(vObjNormal.x) > 0.5 ? vLocal.z : vLocal.x, vLocal.y);
@@ -205,7 +208,24 @@ const buildingMaterial = (shared: Record<string, THREE.IUniform>) =>
         // Glass reflects the sky; a fresnel term brightens grazing angles.
         vec3 viewDir = normalize(cameraPosition - vWorld);
         float fres = pow(1.0 - max(dot(viewDir, n), 0.0), 3.0);
-        if (vType < 0.5 && !roof) col = mix(col, mix(uHorizon, uSkyTop, 0.35) * 0.9, 0.35 + 0.5 * fres);
+        // Glass reflects the sky it faces (horizon below, zenith above) plus the sun itself.
+        vec3 L = normalize(uSunDir);
+        vec3 R = reflect(-viewDir, n);
+        // Above the horizon the glass mirrors the sky; below it, the dark ground and the buildings across the street.
+        vec3 groundRefl = vec3(0.09, 0.085, 0.08) * (0.35 + uAmbient);
+        vec3 skyRefl = R.y >= 0.0
+          ? mix(uHorizon, uSkyTop, smoothstep(0.0, 0.6, R.y))
+          : mix(uHorizon * 0.7, groundRefl, smoothstep(0.0, -0.22, R.y));
+        skyRefl += uSunColor * pow(max(dot(R, L), 0.0), 220.0) * 4.0 * uSunPower;   // the sun mirrored in the facade
+        bool glass = vType < 0.5 || (vType > 1.5 && vType < 2.5);
+        if (glass && !roof) {
+          float k = (vType < 0.5 ? 0.42 : 0.22) + 0.5 * fres;
+          // Spandrel bands between floors stay matte; the panes take the reflection.
+          col = mix(col, skyRefl * 0.95, k * mix(0.35, 1.0, win));
+        }
+        // A soft sheen on every facade turned toward the sun.
+        float spec = pow(max(dot(reflect(-L, n), viewDir), 0.0), 40.0);
+        col += uSunColor * spec * uSunPower * (glass ? 0.5 : 0.08) * (roof ? 0.3 : 1.0);
 
         // Window lighting. Each building lights up gradually, cell by cell.
         float r = hash(cell + vSeed * 31.7);

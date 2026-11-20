@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { AI_CAPABILITIES, AUTONOMY_LEVELS, MARKETS, type AiCategory } from "@baytline/core";
 import type { Dictionary } from "@/i18n";
+import { AUDIENCE_PHOTO, MARKET_PHOTO } from "@/lib/photos";
 import { DemoForm } from "./DemoForm";
+import { Photo } from "./Photo";
 
 export type SectionProps = { dict: Dictionary; locale: "en" | "ar"; n: string; more?: string };
 
@@ -64,7 +66,9 @@ export function AudiencesSection({ dict, locale, n, more }: SectionProps) {
         <p className="mt-5 max-w-[60ch] text-lg text-mist">{s.audiences.intro}</p>
         <div className="mt-14 grid gap-px overflow-hidden rounded-3xl border border-hairline bg-hairline md:grid-cols-2">
           {audiences.map((a) => (
-            <article key={a.key} className="bg-night-2 p-7 sm:p-9">
+            <article key={a.key} className="bg-night-2">
+              <Photo slug={AUDIENCE_PHOTO[a.key]} alt={s.photos.alt[AUDIENCE_PHOTO[a.key]]} ratio="16 / 9" sizes="(min-width: 1280px) 620px, (min-width: 768px) 50vw, 100vw" />
+              <div className="p-7 sm:p-9">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <h3 className="font-display text-3xl text-sand">{a.name}</h3>
                 <Status available={AVAILABLE_AUDIENCES.has(a.key)} label={AVAILABLE_AUDIENCES.has(a.key) ? s.status.available : s.status.building} />
@@ -77,6 +81,7 @@ export function AudiencesSection({ dict, locale, n, more }: SectionProps) {
                   </li>
                 ))}
               </ul>
+              </div>
             </article>
           ))}
         </div>
@@ -177,10 +182,13 @@ export function MarketsSection({ dict, locale, n, more }: SectionProps) {
         <p className="mt-5 max-w-[62ch] text-lg text-mist">{s.markets.intro}</p>
         <ul className="mt-14 grid grid-cols-2 gap-px overflow-hidden rounded-3xl border border-hairline bg-hairline sm:grid-cols-3 lg:grid-cols-6">
           {MARKETS.map((m) => (
-            <li key={m.code} className="bg-night-2 p-6">
-              <p className="font-display text-4xl text-gold-light" dir="ltr">{m.code}</p>
-              <p className="mt-3 text-sand">{dict.markets[m.code]}</p>
-              <p className="mt-1 text-sm text-mist" dir="ltr">{m.currency} · {m.timeZone.split("/")[1]}</p>
+            <li key={m.code} className="bg-night-2">
+              <Photo slug={MARKET_PHOTO[m.code]} alt={s.photos.alt[MARKET_PHOTO[m.code]]} ratio="4 / 5" sizes="(min-width: 1024px) 210px, (min-width: 640px) 33vw, 50vw" />
+              <div className="p-5">
+                <p className="font-display text-3xl text-gold-light" dir="ltr">{m.code}</p>
+                <p className="mt-2 text-sand">{dict.markets[m.code]}</p>
+                <p className="mt-1 text-sm text-mist"><bdi dir="ltr">{m.currency} · {m.timeZone.split("/")[1]}</bdi></p>
+              </div>
             </li>
           ))}
         </ul>
