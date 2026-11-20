@@ -11,3 +11,8 @@ next-env.d.ts
 .DS_Store
 test-results/
 playwright-report/
+
+# design-taste-frontend skill: browser profiles and screenshots it writes while checking pages
+.taste-skill/chrome-*
+**/.taste-skill/chrome-*
+shots/
