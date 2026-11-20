@@ -68,6 +68,8 @@ export type UserProfile = UserDirectoryRow & {
   /** From the auth store: counts and dates only, never tokens. */
   activeSessions: number;
   lastActiveAt: Date | null;
+  /** Two-step sign-in is on (from the auth store; never the secret). */
+  mfaEnrolled: boolean;
   isSelf: boolean;
   canManage: boolean;
 };
@@ -115,12 +117,14 @@ export async function getUserProfile(db: Db, actor: Actor, userId: string): Prom
   // Permission was checked above; the auth store answers only for this one user.
   const sessions = await withAuthTx(db, async (c) => {
     const { rows } = await c.query(
-      "select count(*)::int as n, max(last_seen_at) as last from auth.sessions where user_id = $1 and expires_at > now()",
+      `select count(*)::int as n, max(last_seen_at) as last,
+              exists (select 1 from auth.mfa_factors f where f.user_id = $1 and f.confirmed_at is not null) as mfa
+         from auth.sessions where user_id = $1 and expires_at > now()`,
       [userId],
     );
     return rows[0];
   });
-  return { ...base, activeSessions: sessions.n, lastActiveAt: sessions.last };
+  return { ...base, activeSessions: sessions.n, lastActiveAt: sessions.last, mfaEnrolled: sessions.mfa };
 }
 
 /** Disabling blocks sign-in and ends existing sessions on their next request. Never on yourself. */

@@ -13,7 +13,7 @@ export async function pmSection(locale: string, orgId: string, sectionId: string
   const { allowed, section } = await checkSection(page, sectionId);
   if (page.ctx.org.type !== "property_manager") notFound();
   const can = (p: Permission) => hasCapability(page.ctx.principal, p);
-  const actor = { userId: page.session.user.id, orgId: page.ctx.org.id };
+  const actor = { userId: page.session.user.id, mfa: page.session.mfaVerified, orgId: page.ctx.org.id };
   return { page, allowed, section, can, actor, base: `/${page.locale}/o/${orgId}` };
 }
 

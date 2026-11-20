@@ -28,7 +28,7 @@ export default async function Overview({ params }: { params: Promise<{ locale: s
 
   const showTrust = workspace.id !== "management";
   const summary = workspace.id === "management" && hasCapability(ctx.principal, "property.view")
-    ? await getPortfolioSummary(getDb(), { userId: session.user.id, orgId: ctx.org.id })
+    ? await getPortfolioSummary(getDb(), { userId: session.user.id, mfa: session.mfaVerified, orgId: ctx.org.id })
     : null;
 
   return (

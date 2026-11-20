@@ -14,6 +14,7 @@ import { Chip } from "@/components/ui/Chip";
 import { PlaceholderBadge } from "@/components/ui/PlaceholderBadge";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { ActionForm } from "@/components/forms/ActionForm";
+import { resetUserMfaAction } from "@/server/actions/security";
 import { ConfirmAction } from "@/components/forms/ConfirmAction";
 import { SelectField } from "@/components/forms/Field";
 
@@ -24,7 +25,7 @@ export default async function UserDetail({ params }: { params: Promise<{ locale:
   const { dict } = page;
   if (!allowed) return <AccessDenied dict={dict} orgName={page.ctx.org.name} />;
 
-  const actor = { userId: page.session.user.id, orgId };
+  const actor = { userId: page.session.user.id, mfa: page.session.mfaVerified, orgId };
   const user = await getUserProfile(getDb(), actor, userId).catch((e) => {
     if (e instanceof IdentityError && e.code === "not_found") notFound();
     throw e;
@@ -55,12 +56,13 @@ export default async function UserDetail({ params }: { params: Promise<{ locale:
         </div>
       </SectionHeader>
 
-      <dl className="grid gap-px overflow-hidden rounded-panel border border-line bg-line sm:grid-cols-4">
+      <dl className="grid gap-px overflow-hidden rounded-panel border border-line bg-line sm:grid-cols-5">
         {([
           [dict.auth.email, <bdi key="e" dir="ltr">{user.email}</bdi>],
           [dict.users.columns.created, date.format(user.createdAt)],
           [dict.users.sessions, user.activeSessions],
           [dict.users.lastActive, user.lastActiveAt ? date.format(user.lastActiveAt) : dict.users.never],
+          [dict.sec.reset.title, user.mfaEnrolled ? dict.sec.reset.on : dict.sec.reset.off],
         ] as const).map(([k, v]) => (
           <div key={k} className="min-w-0 bg-surface px-4 py-3">
             <dt className="text-xs text-ink-muted">{k}</dt>
@@ -93,6 +95,11 @@ export default async function UserDetail({ params }: { params: Promise<{ locale:
                 {hidden}
                 <input type="hidden" name="status" value="active" />
               </ActionForm>
+            )}
+            {user.mfaEnrolled && (
+              <ConfirmAction trigger={dict.sec.reset.reset} hint={dict.sec.reset.hint} confirmLabel={dict.sec.reset.reset} pendingLabel={dict.team.saving} action={resetUserMfaAction}>
+                {hidden}
+              </ConfirmAction>
             )}
             {user.activeSessions > 0 && (
               <ActionForm action={revokeSessionsAction} variant="quiet" submitLabel={dict.users.revoke} pendingLabel={dict.team.saving}>

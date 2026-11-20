@@ -20,7 +20,7 @@ export default async function PlatformAiPage({ params }: { params: Promise<{ loc
   const { allowed } = await checkSection(page, "ai-policies");
   const { dict } = page;
   if (!allowed || !hasCapability(page.ctx.principal, "platform.ai_policy.manage")) return <AccessDenied dict={dict} orgName={page.ctx.org.name} />;
-  const v = await getPlatformAi(getDb(), { userId: page.session.user.id, orgId });
+  const v = await getPlatformAi(getDb(), { userId: page.session.user.id, mfa: page.session.mfaVerified, orgId });
   const t = dict.ai.platform;
   const s = v.settings;
   const intl = page.locale;

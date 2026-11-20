@@ -27,7 +27,7 @@ export default async function OrganizationDetail({ params }: { params: Promise<{
   const { dict } = page;
   if (!allowed) return <AccessDenied dict={dict} orgName={page.ctx.org.name} />;
 
-  const actor = { userId: page.session.user.id, orgId };
+  const actor = { userId: page.session.user.id, mfa: page.session.mfaVerified, orgId };
   const notFoundOn = (e: unknown): never => {
     if (e instanceof IdentityError && e.code === "not_found") notFound();
     throw e;

@@ -76,6 +76,15 @@ Each event stores the time, actor, actor kind, organization, event type, outcome
 |---|---|
 | PostgreSQL 16+ with three roles | Done locally (`pnpm db:setup`). Shared environments need the roles and database provisioned by infrastructure and the three `DATABASE_*_URL` secrets injected. |
 | `APP_URL` | Required in production for invitation and reset links. |
-| Email delivery | **Not connected.** `MAIL_PROVIDER` is rejected until an adapter is written. Invitation links are shown to the inviter instead, and password reset tells the user it's unavailable. The dev console outbox works in development only. |
+| Email delivery | **SMTP connector** (`MAIL_SMTP_URL`, `MAIL_FROM`). Until it is configured and checked, invitation links are shown to the inviter and password reset says it is unavailable. The dev console outbox works in development only. |
 | Data residency | Pick the hosting region (and the database location within it) before real users sign up. |
 | Hardening before launch | IP-based rate limiting at the edge, breached-password screening, MFA (TOTP or passkeys) for administrators, an audit retention policy per market, and break-glass support access (designed in architecture.md, not built). |
+
+## Two-step sign-in (milestone 11)
+
+Authenticator-app codes (TOTP, RFC 6238) with ten one-time recovery codes. Secrets are AES-256-GCM encrypted under `BAYTLINE_MFA_KEY`; codes are accepted once per time step, five wrong codes in 15 minutes pause verification, and every step is audited (`auth.mfa.*`).
+
+- **Platform staff must use it.** The platform workspace refuses a session without a verified second factor in three places: the page guard (redirects to setup), `requireContext` (`mfa_required`), and SQL (`app.is_platform_staff()` / `is_platform_admin()` / `has_platform_audit()` require `app.mfa = on`, set by `withAppTx` from the session).
+- **Sign-in:** a password sign-in for a user with MFA creates a session that only the code step can use; every other page treats it as signed out.
+- **Everyone else** may turn it on (and off, with a current code) under *Two-step sign-in*.
+- **Lost phone:** a platform administrator resets someone else's MFA from the user's page; their sessions end. Nobody can reset their own.

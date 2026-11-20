@@ -33,6 +33,7 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
         </div>
         <div className="flex items-center gap-4">
           <LocaleSwitcher current={locale} label={dict.common.language} />
+          {session && <Link href={`/${locale}/app/security`} className="text-sm text-ink-muted underline underline-offset-4">{dict.sec.mfa.title}</Link>}
           {session && (
             <form action={signOutAction}>
               <input type="hidden" name="locale" value={locale} />

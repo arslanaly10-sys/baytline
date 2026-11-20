@@ -23,7 +23,7 @@ export default async function OrgAiPage({ params, searchParams }: { params: Prom
   const { allowed, section } = await checkSection(page, "ai");
   const { dict } = page;
   if (!allowed) return <AccessDenied dict={dict} orgName={page.ctx.org.name} />;
-  const actor = { userId: page.session.user.id, orgId };
+  const actor = { userId: page.session.user.id, mfa: page.session.mfaVerified, orgId };
   const [view, log] = await Promise.all([getOrgAiPolicy(getDb(), actor), listAiRequests(getDb(), actor, { status: q.status, before: q.before })]);
   const t = dict.ai;
   const site = dict.site.ai;

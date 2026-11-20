@@ -41,7 +41,7 @@ export default async function AuditPage({
   const outcome = OUTCOMES.find((o) => o === q.outcome);
   // Dates are read in the viewing organization's market time zone (from market settings).
   const timeZone = timeZoneOf(await getMarketsConfig(), page.ctx.org.market);
-  const actor = { userId: page.session.user.id, orgId };
+  const actor = { userId: page.session.user.id, mfa: page.session.mfaVerified, orgId };
   const { scope, rows } = await listAuditEvents(getDb(), actor, {
     limit: PAGE,
     eventType: q.event,

@@ -26,7 +26,7 @@ export async function projectSection(locale: string, orgId: string, projectId: s
   if (page.ctx.org.type !== "developer") notFound();
   const can = (p: Permission) => hasCapability(page.ctx.principal, p);
   if (!canProjects) return { page, project: null as never, allowed: false, can, marketLocale: page.locale };
-  const project = await getProject(getDb(), { userId: page.session.user.id, orgId }, projectId).catch((e) => {
+  const project = await getProject(getDb(), { userId: page.session.user.id, mfa: page.session.mfaVerified, orgId }, projectId).catch((e) => {
     if (e instanceof IdentityError && e.code === "not_found") notFound();
     throw e;
   });
@@ -35,5 +35,5 @@ export async function projectSection(locale: string, orgId: string, projectId: s
 }
 
 export function actorOf(page: OrgPage) {
-  return { userId: page.session.user.id, orgId: page.ctx.org.id };
+  return { userId: page.session.user.id, mfa: page.session.mfaVerified, orgId: page.ctx.org.id };
 }

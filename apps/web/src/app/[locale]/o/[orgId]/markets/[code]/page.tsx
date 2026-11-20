@@ -13,6 +13,7 @@ import { Chip } from "@/components/ui/Chip";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { ActionForm } from "@/components/forms/ActionForm";
 import { Field, SelectField } from "@/components/forms/Field";
+import { RulesPanel } from "@/components/platform/RulesPanel";
 
 // A known Sunday, used only to name weekdays in the viewer's language.
 const SUNDAY = Date.UTC(2026, 10, 15);
@@ -27,7 +28,7 @@ export default async function MarketDetail({ params }: { params: Promise<{ local
   const { dict } = page;
   if (!allowed) return <AccessDenied dict={dict} orgName={page.ctx.org.name} />;
 
-  const { market, rules } = await getMarketDetail(getDb(), { userId: page.session.user.id, orgId }, code).catch((e) => {
+  const { market, rules } = await getMarketDetail(getDb(), { userId: page.session.user.id, mfa: page.session.mfaVerified, orgId }, code).catch((e) => {
     if (e instanceof IdentityError && e.code === "not_found") notFound();
     throw e;
   });
@@ -106,14 +107,8 @@ export default async function MarketDetail({ params }: { params: Promise<{ local
       <section aria-labelledby="rules">
         <h2 id="rules" className="text-lg">{t.rulesTitle}</h2>
         <p className="mt-1 max-w-[70ch] text-sm text-ink-muted">{t.rulesIntro}</p>
-        <ul className="mt-4 grid gap-px overflow-hidden rounded-panel border border-line bg-line sm:grid-cols-2 lg:grid-cols-3">
-          {rules.map((r) => (
-            <li key={r.category} className="flex items-center justify-between gap-3 bg-surface px-4 py-3 text-sm">
-              <span>{t.categories[r.category]}</span>
-              {r.status === "needs_setup" ? <Chip tone="attention">{t.needsSetup}</Chip> : <Chip tone="good">{t.configured}</Chip>}
-            </li>
-          ))}
-        </ul>
+        <RulesPanel dict={dict} locale={page.locale} orgId={orgId} market={market} rules={rules} userId={page.session.user.id}
+          canPropose={hasCapability(page.ctx.principal, "platform.market_rules.propose")} canApprove={hasCapability(page.ctx.principal, "platform.market_rules.approve")} />
       </section>
     </div>
   );

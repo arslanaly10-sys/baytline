@@ -20,7 +20,7 @@ async function customerActor(locale: UiLocale, back: string): Promise<{ actor: A
   const session = await getSession();
   if (!session) redirect(signInPath(locale, back));
   const orgId = await ensurePersonalWorkspace(getDb(), session.user);
-  return { actor: { userId: session.user.id, orgId }, personal: `/${locale}/o/${orgId}` };
+  return { actor: { userId: session.user.id, mfa: session.mfaVerified, orgId }, personal: `/${locale}/o/${orgId}` };
 }
 
 const contactFrom = (fd: FormData) => ({

@@ -323,6 +323,8 @@ describe("multi-factor authentication", () => {
     expect(stored[0]!.secret_encrypted).not.toContain(start.secret);
 
     expect(await code(confirmMfaEnrollment(db, s.userId, v0.sessionId, "000000"))).toBe("invalid_input:code");
+    // The wrong code was recorded (and kept), so throttling counts failures during setup too.
+    expect((await withAuthTxRaw("select count(*)::int as n from auth.mfa_attempts where user_id = $1 and not succeeded", [s.userId]))[0]!.n).toBe(1);
     const recovery = await confirmMfaEnrollment(db, s.userId, v0.sessionId, code6(start.secret));
     expect(recovery).toHaveLength(10);
     expect(recovery[0]).toMatch(/^[a-z2-7]{5}-[a-z2-7]{5}$/);

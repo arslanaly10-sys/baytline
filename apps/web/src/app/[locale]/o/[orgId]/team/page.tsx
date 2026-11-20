@@ -16,7 +16,7 @@ export default async function TeamPage({ params }: { params: Promise<{ locale: s
   const header = <SectionHeader eyebrow={page.ctx.org.name} title={sectionLabel(ws, "team")} intro={sectionDescription(ws, "team")} />;
   if (!allowed) return <div className="space-y-10">{header}<AccessDenied dict={page.dict} orgName={page.ctx.org.name} /></div>;
 
-  const team = await getTeam(getDb(), { userId: page.session.user.id, orgId });
+  const team = await getTeam(getDb(), { userId: page.session.user.id, mfa: page.session.mfaVerified, orgId });
   const timeZone = timeZoneOf(await getMarketsConfig(), page.ctx.org.market);
   return (
     <div className="space-y-10">

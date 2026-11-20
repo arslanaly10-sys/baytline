@@ -156,7 +156,8 @@ export async function confirmMfaEnrollment(db: Db, userId: string, sessionId: st
   const key = mfaKey(env);
   if (!key) throw new IdentityError("invalid_input", "mfa_unavailable");
   const c6 = String(code ?? "").replace(/\s/g, "");
-  return withAuthTx(db, async (c) => {
+  // A wrong code is recorded and committed before the error is returned, so throttling counts it.
+  const codes = await withAuthTx(db, async (c) => {
     const { rows } = await c.query("select secret_encrypted, confirmed_at, last_used_step from auth.mfa_factors where user_id = $1 for update", [userId]);
     const f = rows[0];
     if (!f) throw new IdentityError("invalid_input", "mfa_not_started");
@@ -166,20 +167,22 @@ export async function confirmMfaEnrollment(db: Db, userId: string, sessionId: st
     await c.query("insert into auth.mfa_attempts (user_id, succeeded) values ($1, $2)", [userId, step !== null]);
     if (step === null) {
       await writeAudit(c, { type: "auth.mfa.failed", outcome: "failure", actorUserId: userId, target: { type: "user", id: userId }, metadata: { stage: "enrolment" } });
-      throw new IdentityError("invalid_input", "code");
+      return null;
     }
     await c.query("update auth.mfa_factors set confirmed_at = now(), last_used_step = $2 where user_id = $1", [userId, step]);
-    const codes = Array.from({ length: RECOVERY_CODES }, newRecoveryCode);
+    const fresh = Array.from({ length: RECOVERY_CODES }, newRecoveryCode);
     await c.query("delete from auth.mfa_recovery_codes where user_id = $1", [userId]);
-    for (const rc of codes) await c.query("insert into auth.mfa_recovery_codes (user_id, code_hash) values ($1, $2)", [userId, sha256(normalizeRecovery(rc))]);
+    for (const rc of fresh) await c.query("insert into auth.mfa_recovery_codes (user_id, code_hash) values ($1, $2)", [userId, sha256(normalizeRecovery(rc))]);
     // This session has just shown the second factor.
     await c.query("update auth.sessions set mfa_verified_at = now() where id = $1 and user_id = $2", [sessionId, userId]);
     await writeAudit(c, { type: "auth.mfa.enrolled", outcome: "success", actorUserId: userId, target: { type: "user", id: userId } });
-    return codes;
+    return fresh;
   });
+  if (!codes) throw new IdentityError("invalid_input", "code");
+  return codes;
 }
 
-async function throttle(c: Client, userId: string) {
+async function throttle(c: Client, userId: string): Promise<void> {
   const { rows } = await c.query<{ n: number }>(
     "select count(*)::int as n from auth.mfa_attempts where user_id = $1 and not succeeded and at > now() - make_interval(mins => $2)",
     [userId, FAIL_WINDOW_MIN],
@@ -246,17 +249,19 @@ export async function disableMfa(db: Db, userId: string, code: unknown, env: Nod
     (await c.query("select 1 from app.memberships m join app.organizations o on o.id = m.org_id where m.user_id = $1 and m.status = 'active' and o.type = 'platform'", [userId])).rowCount! > 0,
   );
   if (isStaff) throw new IdentityError("forbidden", "mfa_required_for_platform");
-  await withAuthTx(db, async (c) => {
+  const ok = await withAuthTx(db, async (c) => {
     const { rows } = await c.query("select secret_encrypted, last_used_step from auth.mfa_factors where user_id = $1 and confirmed_at is not null for update", [userId]);
     if (!rows[0]) throw new IdentityError("invalid_input", "mfa_not_enrolled");
     await throttle(c, userId);
     const step = matchTotp(open(rows[0].secret_encrypted, key), String(code ?? "").replace(/\s/g, ""), rows[0].last_used_step === null ? null : Number(rows[0].last_used_step));
     await c.query("insert into auth.mfa_attempts (user_id, succeeded) values ($1, $2)", [userId, step !== null]);
-    if (step === null) throw new IdentityError("invalid_input", "code");
+    if (step === null) return false; // recorded and committed, so throttling counts it
     await c.query("delete from auth.mfa_recovery_codes where user_id = $1", [userId]);
     await c.query("delete from auth.mfa_factors where user_id = $1", [userId]);
     await writeAudit(c, { type: "auth.mfa.disabled", outcome: "success", actorUserId: userId, target: { type: "user", id: userId } });
+    return true;
   });
+  if (!ok) throw new IdentityError("invalid_input", "code");
 }
 
 /**

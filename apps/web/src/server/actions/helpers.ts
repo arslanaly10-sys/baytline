@@ -24,7 +24,7 @@ export async function localeAndDict(fd: FormData): Promise<{ locale: UiLocale; d
 export async function requireActor(locale: UiLocale, orgId: string): Promise<Actor> {
   const session = await getSession();
   if (!session) redirect(signInPath(locale, `/${locale}/o/${orgId}`));
-  return { userId: session.user.id, orgId };
+  return { userId: session.user.id, mfa: session.mfaVerified, orgId };
 }
 
 type ErrorMessages = Record<string, string> & { generic: string };

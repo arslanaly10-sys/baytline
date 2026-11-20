@@ -37,7 +37,7 @@ export default async function IntegrationsPage({ params }: { params: Promise<{ l
   if (!allowed) return <div className="space-y-10">{header}<AccessDenied dict={dict} orgName={page.ctx.org.name} /></div>;
 
   const canManage = hasCapability(page.ctx.principal, "platform.integrations.manage");
-  const [items, markets] = await Promise.all([getIntegrationRegistry(getDb(), { userId: page.session.user.id, orgId }), getMarketsConfig()]);
+  const [items, markets] = await Promise.all([getIntegrationRegistry(getDb(), { userId: page.session.user.id, mfa: page.session.mfaVerified, orgId }), getMarketsConfig()]);
   const date = new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short", timeZone: timeZoneOf(markets, page.ctx.org.market) });
   const hidden = (key: string) => (
     <>

@@ -5,6 +5,7 @@
  */
 import srcEn from "./sources.en";
 import aiEn from "./ai.en";
+import secEn from "./sec.en";
 const en = {
   brand: {
     name: "Baytline",
@@ -372,6 +373,17 @@ const en = {
       "support.closed": "Support request closed",
       "location.updated": "Project location edited",
       "location.verified": "Project location verified",
+      "auth.mfa.enrolled": "Two-step sign-in turned on",
+      "auth.mfa.verified": "Two-step sign-in code accepted",
+      "auth.mfa.failed": "Two-step sign-in code rejected",
+      "auth.mfa.throttled": "Two-step sign-in paused after wrong codes",
+      "auth.mfa.recovery_used": "Recovery code used",
+      "auth.mfa.disabled": "Two-step sign-in turned off",
+      "auth.mfa.reset": "Two-step sign-in reset by an administrator",
+      "market_rule.proposed": "Market rule proposed",
+      "market_rule.approved": "Market rule approved",
+      "market_rule.rejected": "Market rule rejected",
+      "market_rule.withdrawn": "Market rule proposal withdrawn",
       "ai.requested": "AI request made",
       "ai.blocked": "AI request stopped by policy",
       "ai_policy.updated": "AI policy changed",
@@ -519,7 +531,7 @@ const en = {
     previewNote: "Uses the saved settings. A fixed example value, not real data.",
     seedNote: "Currency, time zone and weekend were seeded from public ISO 4217 and IANA data. Formatting defaults are starting points. Review them before launch.",
     rulesTitle: "Rules and fees",
-    rulesIntro: "No regulated values are set. Each one needs a verified source, an effective date and a second person's approval before anything can use it. That workflow arrives in the next milestone.",
+    rulesIntro: "Baytline sets none of these values. Each one is proposed with its source and effective date, and applies only after a second platform person approves it.",
     needsSetup: "Needs setup",
     configured: "Configured",
     categories: {
@@ -576,10 +588,10 @@ const en = {
     },
     providers: {
       database: { name: "Database", purpose: "Stores accounts, organizations, settings and audit history." },
-      email: { name: "Email delivery", purpose: "Sends invitations and password-reset links." },
+      email: { name: "Email delivery (SMTP)", purpose: "Sends invitations and password-reset links through your SMTP service. The check signs in and sends nothing." },
       whatsapp: { name: "WhatsApp Business", purpose: "Client conversations on WhatsApp." },
       sms: { name: "SMS", purpose: "Text-message reminders and verification codes." },
-      document_storage: { name: "Document storage", purpose: "Brochures, floor plans and contracts." },
+      document_storage: { name: "Document storage (S3-compatible)", purpose: "Brochures, floor plans and contracts in your bucket. The check reads the bucket and writes nothing." },
       ai_gateway: { name: "AI provider", purpose: "Drafting, translation, transcription and summaries." },
       developer_feeds: { name: "Developer inventory feeds", purpose: "Authorized availability and price feeds, registered per developer." },
       ad_channels: { name: "Advertising channels", purpose: "Leads and campaign results from ad platforms." },
@@ -1215,6 +1227,7 @@ const en = {
       cost: "The cost must be a positive amount, with no more decimals than the currency allows.",
     },
   },
+  sec: secEn,
   ai: aiEn,
   src: srcEn,
   loc: {

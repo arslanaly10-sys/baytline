@@ -27,7 +27,7 @@ export default async function DemoRequestsPage({ params, searchParams }: { param
   if (!allowed) return <div className="space-y-10">{header}<AccessDenied dict={dict} orgName={page.ctx.org.name} /></div>;
 
   const canManage = hasCapability(page.ctx.principal, "platform.orgs.manage");
-  const [rows, markets] = await Promise.all([listDemoRequestsByStatus(getDb(), { userId: page.session.user.id, orgId }, q.status), getMarketsConfig()]);
+  const [rows, markets] = await Promise.all([listDemoRequestsByStatus(getDb(), { userId: page.session.user.id, mfa: page.session.mfaVerified, orgId }, q.status), getMarketsConfig()]);
   const date = new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short", timeZone: timeZoneOf(markets, page.ctx.org.market) });
   const base = `/${locale}/o/${orgId}/demo-requests`;
   const orgTypes = dict.site.demo.roles;

@@ -27,7 +27,7 @@ export default async function OrganizationsPage({ params, searchParams }: { para
   if (!allowed) return <div className="space-y-10">{header}<AccessDenied dict={dict} orgName={page.ctx.org.name} /></div>;
 
   const canManage = hasCapability(page.ctx.principal, "platform.orgs.manage");
-  const [orgs, markets] = await Promise.all([searchOrganizations(getDb(), { userId: page.session.user.id, orgId }, q), getMarketsConfig()]);
+  const [orgs, markets] = await Promise.all([searchOrganizations(getDb(), { userId: page.session.user.id, mfa: page.session.mfaVerified, orgId }, q), getMarketsConfig()]);
   const marketName = (code: string | null) => markets.find((m) => m.code === code)?.name[page.locale] ?? "";
   const filtered = Boolean(q.q || q.type || q.status || q.market);
   const base = `/${locale}/o/${orgId}/organizations`;

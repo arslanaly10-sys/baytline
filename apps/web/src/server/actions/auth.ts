@@ -24,6 +24,8 @@ export async function signInAction(_prev: FormState, fd: FormData): Promise<Form
     if (!r.ok) return { status: "error", message: dict.auth.errors[r.reason] };
     await setSessionCookie(r.session.token, r.session.expiresAt);
     target = safeNext(str(fd, "next"), locale);
+    // With two-step sign-in on, the session can only finish signing in until the code passes.
+    if (r.mfaRequired) target = `/${locale}/sign-in/verify?next=${encodeURIComponent(target)}`;
   } catch (e) {
     return failed(e, dict.auth.errors);
   }

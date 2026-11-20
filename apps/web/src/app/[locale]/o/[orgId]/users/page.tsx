@@ -22,7 +22,7 @@ export default async function UsersPage({ params, searchParams }: { params: Prom
   const header = <SectionHeader eyebrow={page.ctx.org.name} title={sectionLabel(ws, "users")} intro={dict.users.intro} />;
   if (!allowed) return <div className="space-y-10">{header}<AccessDenied dict={dict} orgName={page.ctx.org.name} /></div>;
 
-  const [users, markets] = await Promise.all([searchUsers(getDb(), { userId: page.session.user.id, orgId }, q), getMarketsConfig()]);
+  const [users, markets] = await Promise.all([searchUsers(getDb(), { userId: page.session.user.id, mfa: page.session.mfaVerified, orgId }, q), getMarketsConfig()]);
   const date = new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeZone: timeZoneOf(markets, page.ctx.org.market) });
   const base = `/${locale}/o/${orgId}/users`;
   const filtered = Boolean(q.q || q.status);

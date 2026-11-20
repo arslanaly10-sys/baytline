@@ -1,6 +1,7 @@
 import type { Dictionary } from "./en";
 import srcAr from "./sources.ar";
 import aiAr from "./ai.ar";
+import secAr from "./sec.ar";
 
 /** Arabic (Modern Standard). Reviewed translation required before launch. */
 const ar: Dictionary = {
@@ -370,6 +371,17 @@ const ar: Dictionary = {
       "support.closed": "إغلاق طلب دعم",
       "location.updated": "تعديل موقع المشروع",
       "location.verified": "التحقق من موقع المشروع",
+      "auth.mfa.enrolled": "تفعيل التحقق بخطوتين",
+      "auth.mfa.verified": "قبول رمز التحقق بخطوتين",
+      "auth.mfa.failed": "رفض رمز التحقق بخطوتين",
+      "auth.mfa.throttled": "إيقاف التحقق بخطوتين مؤقتًا بعد رموز خاطئة",
+      "auth.mfa.recovery_used": "استخدام رمز استرداد",
+      "auth.mfa.disabled": "إيقاف التحقق بخطوتين",
+      "auth.mfa.reset": "إعادة ضبط التحقق بخطوتين من مسؤول",
+      "market_rule.proposed": "اقتراح قاعدة سوق",
+      "market_rule.approved": "اعتماد قاعدة سوق",
+      "market_rule.rejected": "رفض قاعدة سوق",
+      "market_rule.withdrawn": "سحب اقتراح قاعدة سوق",
       "ai.requested": "طلب ذكاء اصطناعي",
       "ai.blocked": "طلب ذكاء اصطناعي أوقفته السياسة",
       "ai_policy.updated": "تغيير سياسة الذكاء الاصطناعي",
@@ -517,7 +529,7 @@ const ar: Dictionary = {
     previewNote: "تستخدم الإعدادات المحفوظة. قيمة مثال ثابتة وليست بيانات حقيقية.",
     seedNote: "أُدخلت العملة والمنطقة الزمنية وعطلة نهاية الأسبوع من بيانات ISO 4217 وIANA العامة. إعدادات التنسيق نقطة بداية فقط، فراجعها قبل الإطلاق.",
     rulesTitle: "القواعد والرسوم",
-    rulesIntro: "لم تُحدَّد أي قيم تنظيمية. تحتاج كل قيمة إلى مصدر موثّق وتاريخ سريان وموافقة شخص ثانٍ قبل استخدامها. ستتوفر هذه الآلية في المرحلة التالية.",
+    rulesIntro: "لا يحدد بيت لاين أيًا من هذه القيم. تُقترح كل قيمة مع مصدرها وتاريخ سريانها، ولا تُطبّق إلا بعد موافقة شخص ثانٍ من فريق المنصة.",
     needsSetup: "يحتاج إلى إعداد",
     configured: "مُعد",
     categories: {
@@ -574,10 +586,10 @@ const ar: Dictionary = {
     },
     providers: {
       database: { name: "قاعدة البيانات", purpose: "تحفظ الحسابات والجهات والإعدادات وسجل التدقيق." },
-      email: { name: "إرسال البريد الإلكتروني", purpose: "يرسل الدعوات وروابط إعادة تعيين كلمة المرور." },
+      email: { name: "إرسال البريد الإلكتروني (SMTP)", purpose: "يرسل الدعوات وروابط إعادة تعيين كلمة المرور عبر خدمة SMTP لديك. يسجّل الفحص الدخول ولا يرسل شيئًا." },
       whatsapp: { name: "واتساب للأعمال", purpose: "محادثات العملاء عبر واتساب." },
       sms: { name: "الرسائل النصية", purpose: "رسائل التذكير ورموز التحقق." },
-      document_storage: { name: "تخزين المستندات", purpose: "الكتيبات والمخططات والعقود." },
+      document_storage: { name: "تخزين المستندات (متوافق مع S3)", purpose: "الكتيبات والمخططات والعقود في حاوية التخزين لديك. يقرأ الفحص الحاوية ولا يكتب شيئًا." },
       ai_gateway: { name: "مزوّد الذكاء الاصطناعي", purpose: "الصياغة والترجمة والتفريغ النصي والتلخيص." },
       developer_feeds: { name: "ملفات بيانات مخزون المطورين", purpose: "بيانات التوفر والأسعار المعتمدة، مسجلة لكل مطوّر." },
       ad_channels: { name: "القنوات الإعلانية", purpose: "العملاء المحتملون ونتائج الحملات من منصات الإعلان." },
@@ -1213,6 +1225,7 @@ const ar: Dictionary = {
       cost: "يجب أن تكون التكلفة مبلغًا موجبًا، دون خانات عشرية أكثر مما تسمح به العملة.",
     },
   },
+  sec: secAr,
   ai: aiAr,
   src: srcAr,
   loc: {

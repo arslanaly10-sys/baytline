@@ -2,7 +2,7 @@ import "server-only";
 import { cache } from "react";
 import { notFound, redirect } from "next/navigation";
 import { hasCapability, isUiLocale, workspaceForOrgType, type UiLocale, type WorkspaceSection } from "@baytline/core";
-import { getOrgContext, recordDenied, recordOrgSwitch, type OrgContext, type ValidSession } from "@baytline/identity";
+import { getOrgContext, IdentityError, recordDenied, recordOrgSwitch, type OrgContext, type ValidSession } from "@baytline/identity";
 import { getDictionary, type Dictionary } from "@/i18n";
 import { dbConfigured, getDb } from "./db";
 import { getSession } from "./session";
@@ -48,7 +48,11 @@ export const loadOrgPage = cache(async (rawLocale: string, orgId: string): Promi
   const locale = requireLocale(rawLocale);
   const session = await requireSession(locale, `/${locale}/o/${orgId}`);
   const db = getDb();
-  const ctx = await getOrgContext(db, { userId: session.user.id, orgId });
+  const ctx = await getOrgContext(db, { userId: session.user.id, mfa: session.mfaVerified, orgId }).catch((e) => {
+    // Platform workspaces need two-step sign-in: send staff to set it up, then back here.
+    if (e instanceof IdentityError && e.detail === "mfa_required") redirect(`/${locale}/app/security?required=platform&next=${encodeURIComponent(`/${locale}/o/${orgId}`)}`);
+    throw e;
+  });
   if (!ctx) {
     await recordDenied(db, session.user.id, { orgId, resource: `/o/${orgId}`, reason: "not_a_member" });
     notFound();

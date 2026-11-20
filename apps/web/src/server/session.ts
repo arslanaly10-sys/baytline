@@ -10,11 +10,21 @@ const PROD = process.env.NODE_ENV === "production";
 export const SESSION_COOKIE = PROD ? "__Host-bl_session" : "bl_session";
 export const MARKET_COOKIE = "market";
 
-/** The signed-in session for this request, or null. Validated against the database every request. */
-export const getSession = cache(async (): Promise<ValidSession | null> => {
+/** The session cookie's session, including one still waiting for its second factor. Only the MFA step uses it. */
+export const getAnySession = cache(async (): Promise<ValidSession | null> => {
   if (!dbConfigured()) return null;
   const token = (await cookies()).get(SESSION_COOKIE)?.value;
   return validateSession(getDb(), token);
+});
+
+/**
+ * The signed-in session for this request, or null. Validated against the database every request.
+ * A session that passed the password but not yet the second factor counts as signed out everywhere
+ * except the MFA step.
+ */
+export const getSession = cache(async (): Promise<ValidSession | null> => {
+  const s = await getAnySession();
+  return s && !s.mfaPending ? s : null;
 });
 
 export async function readSessionToken(): Promise<string | undefined> {

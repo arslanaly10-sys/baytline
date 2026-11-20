@@ -38,12 +38,15 @@ export function AppShell({ dict, locale, session, ctx, market, markets, children
   const orgLabel = (m: OrgContext["memberships"][number]) => (m.type === "individual" ? dict.workspaces.personal.name : m.name);
 
   const signOut = (
-    <form action={signOutAction}>
-      <input type="hidden" name="locale" value={locale} />
-      <button type="submit" className="text-sm underline-offset-4 hover:underline">
-        {dict.auth.signOut}
-      </button>
-    </form>
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+      <a href={`/${locale}/app/security`} className="text-sm underline-offset-4 hover:underline">{dict.sec.mfa.title}</a>
+      <form action={signOutAction}>
+        <input type="hidden" name="locale" value={locale} />
+        <button type="submit" className="text-sm underline-offset-4 hover:underline">
+          {dict.auth.signOut}
+        </button>
+      </form>
+    </div>
   );
 
   return (
