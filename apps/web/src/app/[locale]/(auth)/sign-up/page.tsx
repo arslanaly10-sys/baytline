@@ -16,7 +16,7 @@ export default async function SignUp({ params }: { params: Promise<{ locale: str
   const locale = requireLocale((await params).locale);
   const dict = await getDictionary(locale);
   if (!dbConfigured()) return <StatePanel tone="warning" title={dict.welcome.notConfiguredTitle} body={dict.welcome.notConfiguredBody} />;
-  if (await getSession()) redirect(`/${locale}`);
+  if (await getSession()) redirect(`/${locale}/app`);
 
   return (
     <div>

@@ -53,7 +53,7 @@ export function AppShell({ dict, locale, session, ctx, market, markets, children
       </a>
 
       <aside className="bg-rail text-rail-ink md:sticky md:top-0 md:flex md:h-dvh md:flex-col md:overflow-y-auto">
-        <Link href={`/${locale}`} className="flex items-center gap-2.5 px-4 pt-4 pb-3 md:px-5 md:pt-6">
+        <Link href={`/${locale}/app`} className="flex items-center gap-2.5 px-4 pt-4 pb-3 md:px-5 md:pt-6">
           <BrandMark className="size-7 text-[var(--focus)]" />
           <span className="text-lg font-medium tracking-tight">{dict.brand.name}</span>
         </Link>

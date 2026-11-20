@@ -79,6 +79,18 @@
   --color-rail-muted: var(--rail-muted);
   --color-rail-active: var(--rail-active);
 
+  /* Marketing site (dark and gold), see the .site scope below */
+  --color-night: var(--s-night);
+  --color-night-2: var(--s-night-2);
+  --color-panel: var(--s-panel);
+  --color-gold: var(--s-gold);
+  --color-gold-light: var(--s-gold-light);
+  --color-gold-deep: var(--s-gold-deep);
+  --color-sand: var(--s-sand);
+  --color-mist: var(--s-mist);
+  --color-hairline: var(--s-hairline);
+  --font-display: "Cormorant Garamond Variable", "Amiri", Georgia, serif;
+
   /* Modular scale, ratio 1.25 from 16px */
   --text-xs: 0.8rem;
   --text-sm: 0.875rem;
@@ -170,3 +182,32 @@
     border: 1.5px solid currentColor;
   }
 }
+
+/* ------------------------------------------------------------------
+ * Marketing site theme. Gulf night, warm gold, sand.
+ * Scoped to [data-site] so the app keeps its own palette until the restyle milestone.
+ * ------------------------------------------------------------------ */
+:root {
+  --s-night: #0a0f14;
+  --s-night-2: #0e151c;
+  --s-panel: #121a22;
+  --s-gold: #c9a24a;
+  --s-gold-light: #e8c97f;
+  --s-gold-deep: #8a6a26;
+  --s-sand: #efe6d3;
+  --s-mist: #98a0a8;
+  --s-hairline: #233040;
+}
+html:has([data-site]) { background: var(--s-night); color-scheme: dark; }
+[data-site] {
+  background: var(--s-night);
+  color: var(--s-sand);
+  --brand-sun: var(--s-gold-light);
+  --focus: var(--s-gold-light);
+}
+/* Arabic headlines use Amiri (a classic naskh), Latin headlines Cormorant Garamond. */
+[data-site] .font-display:lang(ar), [data-site]:lang(ar) .font-display { font-family: "Amiri", serif; font-weight: 700; letter-spacing: 0; }
+[data-site] ::selection { background: var(--s-gold); color: var(--s-night); }
+
+/* Lining figures in the display face: Cormorant defaults to old-style numerals. */
+.font-display { font-variant-numeric: lining-nums; }

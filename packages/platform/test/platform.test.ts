@@ -17,7 +17,9 @@ import {
   getMarketDetail,
   getOrganizationProfile,
   getUserProfile,
+  listDemoRequests,
   listMarkets,
+  submitDemoRequest,
   revokeUserSessions,
   runIntegrationCheck,
   searchOrganizations,
@@ -283,5 +285,26 @@ describe("audit filters", () => {
 
   it("support staff have no audit access", async () => {
     expect(await code(listAuditEvents(db, support()))).toBe("forbidden:audit.view");
+  });
+});
+
+describe("demo requests", () => {
+  const base = { name: "Sample Visitor", email: "Visitor@Example.test", phone: "+971 50 000 0000", company: "Sample Co", market: "AE", orgType: "developer", locale: "en" as const, consent: true };
+
+  it("validates input and requires consent", async () => {
+    expect(await submitDemoRequest(db, { ...base, consent: false })).toEqual({ ok: false, reason: "invalid", field: "consent" });
+    expect(await submitDemoRequest(db, { ...base, email: "nope" })).toEqual({ ok: false, reason: "invalid", field: "email" });
+    expect(await submitDemoRequest(db, { ...base, market: "XX" })).toEqual({ ok: false, reason: "invalid", field: "country" });
+  });
+
+  it("stores requests, limits repeats, and only platform staff can read them", async () => {
+    for (let i = 0; i < 3; i++) expect(await submitDemoRequest(db, base)).toEqual({ ok: true });
+    expect(await submitDemoRequest(db, base)).toEqual({ ok: false, reason: "throttled" });
+    const rows = await listDemoRequests(db, support());
+    expect(rows.length).toBe(3);
+    expect(rows[0]!.email).toBe("visitor@example.test");
+    expect(await code(listDemoRequests(db, devAdmin()))).toMatch(/^forbidden/);
+    expect(await raw(f.devAdminId, f.devOrg, "select * from app.demo_requests")).toEqual([]);
+    expect(await code(raw(f.adminId, f.plat, "delete from app.demo_requests"))).toMatch(/permission denied/);
   });
 });

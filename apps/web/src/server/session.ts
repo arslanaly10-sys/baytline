@@ -48,9 +48,10 @@ export async function getMarket(fallback: MarketCode = DEFAULT_MARKET): Promise<
  * so ?next= can't be used to redirect people to another site.
  */
 export function safeNext(next: unknown, locale: UiLocale): string {
-  if (typeof next !== "string") return `/${locale}`;
+  // Default destination after signing in: the workspace picker, not the marketing site.
+  if (typeof next !== "string") return `/${locale}/app`;
   const [, first] = next.split("/");
-  if (!next.startsWith("/") || next.startsWith("//") || next.includes("\\") || !first || !isUiLocale(first)) return `/${locale}`;
+  if (!next.startsWith("/") || next.startsWith("//") || next.includes("\\") || !first || !isUiLocale(first)) return `/${locale}/app`;
   return next;
 }
 

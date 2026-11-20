@@ -43,7 +43,7 @@ export async function signUpAction(_prev: FormState, fd: FormData): Promise<Form
   } catch (e) {
     return { status: "error", message: messageFor(e, dict.auth.errors) };
   }
-  redirect(`/${locale}`);
+  redirect(`/${locale}/app`);
 }
 
 export async function forgotPasswordAction(_prev: FormState, fd: FormData): Promise<FormState> {

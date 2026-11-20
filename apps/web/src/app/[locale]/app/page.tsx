@@ -14,12 +14,13 @@ import { PlaceholderBadge } from "@/components/ui/PlaceholderBadge";
 import { StatePanel } from "@/components/ui/StatePanel";
 import { LocaleSwitcher } from "@/components/shell/LocaleSwitcher";
 
-/** Signed out: welcome. Signed in: organization selection (or straight in when there's only one). */
+/** Workspace picker: organization selection (or straight in when there's only one). Signed-out visitors go to sign-in. */
 export default async function Home({ params }: { params: Promise<{ locale: string }> }) {
   const locale = requireLocale((await params).locale);
   const dict = await getDictionary(locale);
   const configured = dbConfigured();
   const session = configured ? await getSession() : null;
+  if (configured && !session) redirect(`/${locale}/sign-in?next=${encodeURIComponent(`/${locale}/app`)}`);
   const memberships = session ? await listMyMemberships(getDb(), session.user.id) : [];
   if (session && memberships.length === 1) redirect(`/${locale}/o/${memberships[0]!.id}`);
 
