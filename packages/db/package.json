@@ -1,0 +1,24 @@
+{
+  "name": "@baytline/db",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "setup:local": "tsx --env-file-if-exists=../../apps/web/.env.local scripts/setup-local.ts",
+    "migrate": "tsx --env-file-if-exists=../../apps/web/.env.local scripts/migrate.ts"
+  },
+  "dependencies": {
+    "@baytline/core": "workspace:*",
+    "pg": "8.23.1"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.5",
+    "@types/pg": "8.23.1",
+    "tsx": "4.23.15",
+    "typescript": "5.9.3"
+  }
+}
