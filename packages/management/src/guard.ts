@@ -33,7 +33,8 @@ export async function mapDbError(c: Client, e: unknown): Promise<never> {
   };
   if (err.message && known[err.message]) {
     await c.query("rollback to savepoint s").catch(() => {});
-    throw new IdentityError(err.message === "org_mismatch" ? "not_found" : "invalid_input", known[err.message]);
+    if (err.message === "org_mismatch") throw new IdentityError("not_found");
+    throw new IdentityError("invalid_input", known[err.message]);
   }
   if (err.code === "23505") {
     await c.query("rollback to savepoint s").catch(() => {});
