@@ -13,3 +13,4 @@ export * from "./ai-capabilities";
 export * from "./marketplace";
 export * from "./geo";
 export * from "./sources";
+export * from "./lead-scoring";

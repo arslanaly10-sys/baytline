@@ -163,13 +163,13 @@ export const ROLE_GRANTS: Record<Role, readonly Grant[]> = {
       "unit.hold.approve", "price.change.request", "price.change.approve", "payment_plan.manage", "payment_plan.publish", "payment_plan.approve",
       "partner.view", "partner.manage",
       "client_registration.review", "lead.view", "lead.manage", "lead.assign", "viewing.manage", "listing.publish", "conversation.view",
-      "campaign.view", "analytics.view", "audit.view", "commission.view", "commission.approve"),
+      "campaign.view", "analytics.view", "audit.view", "commission.view", "commission.approve", "deal.view", "deal.manage"),
   ],
   developer_sales_manager: [
     ...developerRead,
     ...g("org", "approval.view", "unit.hold.request", "unit.hold.approve", "price.change.request", "partner.view", "partner.manage",
       "client_registration.review", "lead.view", "lead.manage", "lead.assign", "viewing.manage", "listing.publish",
-      "conversation.view", "conversation.reply", "campaign.view", "analytics.view", "commission.view"),
+      "conversation.view", "conversation.reply", "campaign.view", "analytics.view", "commission.view", "deal.view", "deal.manage"),
   ],
   developer_inventory_manager: [
     ...developerRead,
