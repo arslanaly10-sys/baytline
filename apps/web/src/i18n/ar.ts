@@ -2,6 +2,7 @@ import type { Dictionary } from "./en";
 import srcAr from "./sources.ar";
 import aiAr from "./ai.ar";
 import secAr from "./sec.ar";
+import crmAr from "./crm.ar";
 
 /** Arabic (Modern Standard). Reviewed translation required before launch. */
 const ar: Dictionary = {
@@ -371,6 +372,21 @@ const ar: Dictionary = {
       "support.closed": "إغلاق طلب دعم",
       "location.updated": "تعديل موقع المشروع",
       "location.verified": "التحقق من موقع المشروع",
+      "lead.captured": "إضافة طلب عميل كعميل محتمل",
+      "lead.created": "إضافة عميل محتمل",
+      "lead.updated": "تحديث عميل محتمل",
+      "lead.assigned": "إسناد عميل محتمل",
+      "lead.score_overridden": "تحديد فئة تقييم يدويًا",
+      "viewing.scheduled": "جدولة معاينة",
+      "viewing.updated": "تحديث معاينة",
+      "registration.submitted": "إرسال تسجيل عميل",
+      "registration.decided": "حسم تسجيل عميل",
+      "registration.withdrawn": "سحب تسجيل عميل",
+      "deal.created": "فتح صفقة",
+      "deal.updated": "تحديث صفقة",
+      "commission.submitted": "إرسال مطالبة عمولة",
+      "commission.decided": "حسم مطالبة عمولة",
+      "commission.withdrawn": "سحب مطالبة عمولة",
       "auth.mfa.enrolled": "تفعيل التحقق بخطوتين",
       "auth.mfa.verified": "قبول رمز التحقق بخطوتين",
       "auth.mfa.failed": "رفض رمز التحقق بخطوتين",
@@ -1225,6 +1241,7 @@ const ar: Dictionary = {
       cost: "يجب أن تكون التكلفة مبلغًا موجبًا، دون خانات عشرية أكثر مما تسمح به العملة.",
     },
   },
+  crm: crmAr,
   sec: secAr,
   ai: aiAr,
   src: srcAr,
@@ -2017,6 +2034,10 @@ const ar: Dictionary = {
         leads: { label: "العملاء المحتملون", description: "استفسارات من كل القنوات، مقيّمة وموجّهة إلى فريق المبيعات أو الوسطاء الشركاء." },
         partners: { label: "الشركاء", description: "شركات الوساطة التي تعمل معها والمشاريع التي يمكن لكل منها رؤيتها." },
         approvals: { label: "الموافقات", description: "حجوزات الوحدات وتغييرات الأسعار وخطط الدفع بانتظار القرار." },
+        viewings: { label: "المعاينات", description: "معاينات رتّبها فريقك مع العملاء، ونتيجة كل منها." },
+        deals: { label: "الصفقات", description: "صفقات فريقك على وحداتك من التفاوض حتى الإتمام أو الخسارة." },
+        registrations: { label: "تسجيلات العملاء", description: "شركات وساطة تسجّل عملاءها في مشاريعك: اعتمد مع مدة حماية أو ارفض." },
+        commissions: { label: "مطالبات العمولة", description: "مطالبات شركات الوساطة عن الصفقات المتمّة، يعتمدها شخص غير مقدّمها." },
         ai: { label: "سياسة الذكاء الاصطناعي", description: "هل يعمل الذكاء الاصطناعي لمؤسستك، ونماذجه، وميزانيته الشهرية، وحدود كل ميزة، مع سجل الطلبات." },
         team: { label: "الفريق", description: "الأشخاص في جهتك وما يمكن لكل منهم فعله." },
         audit: { label: "سجل التدقيق", description: "من سجّل الدخول، ومن تمت دعوته، ومن تغيّر دوره، ومحاولات الوصول المرفوضة في هذه الجهة." },
@@ -2044,9 +2065,9 @@ const ar: Dictionary = {
       sections: {
         clients: { label: "العملاء", description: "تسجيل العملاء لدى المطورين ومتابعة حالة الحماية وانتهائها." },
         leads: { label: "العملاء المحتملون", description: "عملاؤك المحتملون مع التقييم والنية المكتشفة والعقارات المطابقة والخطوات المقترحة." },
-        viewings: { label: "المعاينات", description: "حجز المعاينات وتأكيدها، مع تذكيرات بلغة العميل." },
-        deals: { label: "الصفقات", description: "العروض والحجوزات والمستندات حتى الإتمام." },
-        commissions: { label: "العمولات", description: "العمولات المتوقعة والمعتمدة لكل صفقة." },
+        viewings: { label: "المعاينات", description: "معاينات رُتّبت مع العملاء، ونتيجة كل منها." },
+        deals: { label: "الصفقات", description: "صفقات على وحدات حقيقية من التفاوض حتى الإتمام أو الخسارة، بالأسعار المتفق عليها كما سُجّلت." },
+        commissions: { label: "العمولات", description: "مطالبات العمولة عن الصفقات المتمّة وقرار المطوّر في كل منها." },
         conversations: { label: "المحادثات", description: "سجل واتساب والرسائل النصية والبريد والدردشة والمكالمات مع كل عميل في سلسلة واحدة." },
         inventory: { label: "مخزون الشركاء", description: "المشاريع والوحدات التي شاركها المطورون معك، موسومة بحسب حداثتها." },
         ai: { label: "سياسة الذكاء الاصطناعي", description: "هل يعمل الذكاء الاصطناعي لمؤسستك، ونماذجه، وميزانيته الشهرية، وحدود كل ميزة، مع سجل الطلبات." },

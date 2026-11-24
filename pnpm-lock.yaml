@@ -25,6 +25,9 @@ importers:
       '@baytline/identity':
         specifier: workspace:*
         version: link:../../packages/identity
+      '@baytline/leads':
+        specifier: workspace:*
+        version: link:../../packages/leads
       '@baytline/management':
         specifier: workspace:*
         version: link:../../packages/management

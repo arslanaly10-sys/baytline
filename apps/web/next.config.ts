@@ -9,7 +9,7 @@ const securityHeaders = [
 
 const config: NextConfig = {
   poweredByHeader: false,
-  transpilePackages: ["@baytline/core", "@baytline/db", "@baytline/identity", "@baytline/platform", "@baytline/developer", "@baytline/management", "@baytline/marketplace", "@baytline/ai"],
+  transpilePackages: ["@baytline/core", "@baytline/db", "@baytline/identity", "@baytline/platform", "@baytline/developer", "@baytline/management", "@baytline/marketplace", "@baytline/ai", "@baytline/leads"],
   serverExternalPackages: ["pg"],
   // Inventory imports accept files up to 2 MB (IMPORT_MAX_BYTES); leave room for the form's other fields.
   experimental: { serverActions: { bodySizeLimit: "3mb" } },

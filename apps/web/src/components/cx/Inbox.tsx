@@ -36,7 +36,7 @@ export function InboxView({ data, dict, locale, orgId, base, status, sectionPath
     <div className="space-y-10">
       <nav aria-label={t.show} className="flex gap-2 text-sm">
         {[["", t.open], ["all", t.all]].map(([v, label]) => (
-          <Link key={v} href={`${base}/${sectionPath}${v ? `?status=${v}` : ""}`} aria-current={(status ?? "") === v ? "page" : undefined}
+          <Link key={v} href={`${base}/${sectionPath}${v ? `${sectionPath.includes("?") ? "&" : "?"}status=${v}` : ""}`} aria-current={(status ?? "") === v ? "page" : undefined}
             className={`rounded-control border px-3 py-1.5 ${(status ?? "") === v ? "border-gulf text-gulf-strong" : "border-line text-ink-muted hover:text-ink"}`}>{label}</Link>
         ))}
       </nav>
